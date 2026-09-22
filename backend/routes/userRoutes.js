@@ -1,0 +1,11 @@
+import express from 'express';
+import {getAllUsers,getUserById,updateUserRole,updateUserStatus} from '../controllers/userController.js';
+import {protect} from '../middleware/authMiddleware.js';
+import {authorizeRoles} from '../middleware/roleMiddleware.js';
+const router=express.Router();
+router.use(protect,authorizeRoles('company_admin','admin'));
+router.get('/',getAllUsers);
+router.get('/:id',getUserById);
+router.route('/:id/role').patch(updateUserRole).put(updateUserRole);
+router.route('/:id/status').patch(updateUserStatus).put(updateUserStatus);
+export default router;

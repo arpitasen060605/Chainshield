@@ -1,0 +1,14 @@
+import express from 'express';
+import {createIncident,getAllIncidents,getIncidentById,updateIncident,updateIncidentStatus,assignIncidentPersonnel,verifyIncident} from '../controllers/incidentController.js';
+import {protect} from '../middleware/authMiddleware.js';
+import {authorizeRoles} from '../middleware/roleMiddleware.js';
+const router=express.Router();
+router.use(protect);
+router.post('/',authorizeRoles('company_admin','admin','incident_responder','lead_investigator'),createIncident);
+router.get('/',authorizeRoles('company_admin','admin','incident_responder','lead_investigator','forensic_analyst','auditor'),getAllIncidents);
+router.get('/:id',authorizeRoles('company_admin','admin','incident_responder','lead_investigator','forensic_analyst','auditor'),getIncidentById);
+router.patch('/:id',authorizeRoles('company_admin','admin','incident_responder','lead_investigator','forensic_analyst'),updateIncident);
+router.patch('/:id/verify',authorizeRoles('company_admin','admin','lead_investigator'),verifyIncident);
+router.patch('/:id/status',authorizeRoles('company_admin','admin','lead_investigator'),updateIncidentStatus);
+router.patch('/:id/assign',authorizeRoles('company_admin','admin','lead_investigator'),assignIncidentPersonnel);
+export default router;

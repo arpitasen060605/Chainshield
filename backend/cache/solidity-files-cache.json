@@ -1,0 +1,77 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "D:\\Movies\\chainshield-dashboard-ui\\backend\\contracts\\EvidenceLedger.sol": {
+      "lastModificationDate": 1789822250115,
+      "contentHash": "e237821ff5b910c186afc3040b133586",
+      "sourceName": "contracts/EvidenceLedger.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "EvidenceLedger"
+      ]
+    },
+    "D:\\Movies\\chainshield-dashboard-ui\\backend\\contracts\\EvidenceRegistry.sol": {
+      "lastModificationDate": 1790083882286,
+      "contentHash": "b14dcfd155065f388dddee4635528f29",
+      "sourceName": "contracts/EvidenceRegistry.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "EvidenceRegistry"
+      ]
+    }
+  }
+}
