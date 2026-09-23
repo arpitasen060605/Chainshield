@@ -322,10 +322,6 @@ const ForgotPassword = () => {
                       Registered Email Address
                     </label>
                     <div className="relative">
-                      <Mail
-                        size={18}
-                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
-                      />
                       <input
                         type="email"
                         value={email}

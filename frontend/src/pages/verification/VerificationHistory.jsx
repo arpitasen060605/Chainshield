@@ -52,8 +52,19 @@ export default function VerificationHistory() {
     fetchHistoryStream();
   }, [resultFilter]);
 
-  // Client-side instant filter for search
+  // Client-side filter for search and result status
   const filteredHistory = historyItems.filter((item) => {
+    // Result Filter matching
+    if (resultFilter !== "All") {
+      if (resultFilter === "VERIFIED" && item.result !== "VERIFIED") return false;
+      if (
+        resultFilter === "POTENTIALLY TAMPERED" &&
+        item.result !== "POTENTIALLY TAMPERED" &&
+        item.result !== "TAMPERED"
+      )
+        return false;
+    }
+
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase().trim();
     const incIdStr = typeof item.incidentId === 'object'

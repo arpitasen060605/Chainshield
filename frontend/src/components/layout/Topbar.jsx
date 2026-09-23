@@ -1,11 +1,9 @@
-import { Bell, Moon, Sun, Menu, ChevronDown, LogOut } from "lucide-react";
+import { Bell, Menu, ChevronDown, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../context/AuthContext";
 
 export default function Topbar({ onMenu }) {
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
 
   const initials = user?.name
@@ -38,15 +36,6 @@ export default function Topbar({ onMenu }) {
       >
         <Bell size={20} />
         <span>3</span>
-      </button>
-
-      <button
-        className="icon-button"
-        onClick={toggleTheme}
-        title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
-        aria-label="Toggle Theme"
-      >
-        {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
       </button>
 
       <div

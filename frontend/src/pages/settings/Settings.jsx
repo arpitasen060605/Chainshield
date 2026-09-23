@@ -1,6 +1,5 @@
 import { useState } from "react";
 import Layout from "../../components/layout/Layout";
-import { useTheme } from "../../context/ThemeContext";
 import {
   defaultAccountSettings,
   defaultNotificationSettings,
@@ -28,8 +27,6 @@ import {
   EyeOff,
   Cpu,
   Layers,
-  Sun,
-  Moon,
 } from "lucide-react";
 
 import { updatePassword } from "../../services/authService";
@@ -38,7 +35,6 @@ import { useAuth } from "../../context/AuthContext";
 import { useEffect } from "react";
 
 export default function SettingsPage() {
-  const { theme, setTheme, toggleTheme } = useTheme();
   const { user, updateProfile } = useAuth();
   const [activeTab, setActiveTab] = useState("account");
 
@@ -403,61 +399,6 @@ export default function SettingsPage() {
                 >
                   Save Account Profile
                 </button>
-              </div>
-            </div>
-
-            {/* GLOBAL APPEARANCE & THEME MODE SECTION */}
-            <div className="bg-[#091626] border border-[#1b314b] rounded-2xl p-6 space-y-4 shadow-2xl">
-              <div className="border-b border-[#15283f] pb-3">
-                <h2 className="text-base font-bold text-white flex items-center gap-2">
-                  <Sun size={18} className="text-amber-400" />
-                  Global Appearance & Theme Mode
-                </h2>
-                <p className="text-xs text-slate-400 mt-1">
-                  Choose your preferred application color theme. Selection applies immediately across all pages and survives page reloads.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div
-                  onClick={() => setTheme("dark")}
-                  className={`p-4 rounded-xl border cursor-pointer transition flex items-center justify-between ${
-                    theme === "dark"
-                      ? "bg-blue-600/10 border-blue-500 text-white shadow-lg shadow-blue-900/20"
-                      : "bg-[#050f1b] border-[#1c324c] text-slate-400 hover:text-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-lg bg-[#0c1a2b] border border-[#1e344d] text-amber-400">
-                      <Moon size={18} />
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold">Dark Cybersecurity Theme</div>
-                      <div className="text-[11px] text-slate-400">Deep `#07111f` dark palette with high-contrast neon accents</div>
-                    </div>
-                  </div>
-                  {theme === "dark" && <Check size={18} className="text-blue-400 shrink-0" />}
-                </div>
-
-                <div
-                  onClick={() => setTheme("light")}
-                  className={`p-4 rounded-xl border cursor-pointer transition flex items-center justify-between ${
-                    theme === "light"
-                      ? "bg-blue-600/10 border-blue-500 text-white shadow-lg shadow-blue-900/20"
-                      : "bg-[#050f1b] border-[#1c324c] text-slate-400 hover:text-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-lg bg-amber-400/10 border border-amber-400/30 text-amber-500">
-                      <Sun size={18} />
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold">Light Clean Theme</div>
-                      <div className="text-[11px] text-slate-400">Clean slate light mode with optimized text readability and contrast</div>
-                    </div>
-                  </div>
-                  {theme === "light" && <Check size={18} className="text-blue-400 shrink-0" />}
-                </div>
               </div>
             </div>
           </form>

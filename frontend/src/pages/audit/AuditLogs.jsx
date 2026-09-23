@@ -77,13 +77,30 @@ export default function AuditLogs() {
       (item.evidenceId && String(item.evidenceId).toLowerCase().includes(q));
 
     // Action matching
-    const matchesAction = actionFilter === "All" || item.action === actionFilter || item.action === actionFilter.toUpperCase().replace(/\s+/g, '_');
+    const matchesAction =
+      actionFilter === "All" ||
+      item.action === actionFilter ||
+      item.action === actionFilter.toUpperCase().replace(/\s+/g, '_');
 
     // User matching
     const matchesUser = userFilter === "All" || item.user === userFilter || item.userEmail === userFilter;
 
-    // Status matching
-    const matchesStatus = statusFilter === "All" || item.status === statusFilter;
+    // Status matching (All, Success, Failed, Pending)
+    let matchesStatus = true;
+    if (statusFilter !== "All") {
+      const normStatus = (item.status || "").toUpperCase();
+      const filterVal = statusFilter.toUpperCase();
+
+      if (filterVal === "SUCCESS") {
+        matchesStatus = ["SUCCESS", "VERIFIED", "COMPLETED"].includes(normStatus);
+      } else if (filterVal === "FAILED") {
+        matchesStatus = ["FAILED", "ERROR", "REJECTED"].includes(normStatus);
+      } else if (filterVal === "PENDING") {
+        matchesStatus = ["PENDING", "WARNING"].includes(normStatus);
+      } else {
+        matchesStatus = normStatus === filterVal;
+      }
+    }
 
     return matchesSearch && matchesAction && matchesUser && matchesStatus;
   });
@@ -109,8 +126,9 @@ export default function AuditLogs() {
         return <Layers size={14} className="text-cyan-400" />;
       case "Evidence Verification Requested":
         return <Clock size={14} className="text-amber-400" />;
+      case "Evidence Verification":
       case "Evidence Verified":
-        return <CheckCircle2 size={14} className="text-emerald-400" />;
+        return <CheckCircle2 size={14} className="text-blue-400" />;
       case "Report Generated":
         return <Sparkles size={14} className="text-purple-400" />;
       default:
@@ -232,7 +250,7 @@ export default function AuditLogs() {
                 <option value="Hash Generated">Hash Generated</option>
                 <option value="Blockchain Record Created">Blockchain Record Created</option>
                 <option value="Evidence Verification Requested">Evidence Verification Requested</option>
-                <option value="Evidence Verified">Evidence Verified</option>
+                <option value="Evidence Verification">Evidence Verification</option>
                 <option value="Report Generated">Report Generated</option>
               </select>
             </div>
@@ -277,12 +295,9 @@ export default function AuditLogs() {
                 className="w-full bg-[#071322] border border-[#1d334c] rounded-xl px-3 py-2 text-slate-200 outline-none text-xs"
               >
                 <option value="All">All Statuses</option>
-                <option value="SUCCESS">SUCCESS</option>
-                <option value="VERIFIED">VERIFIED</option>
-                <option value="COMPLETED">COMPLETED</option>
-                <option value="WARNING">WARNING</option>
-                <option value="PENDING">PENDING</option>
-                <option value="FAILED">FAILED</option>
+                <option value="Success">Success</option>
+                <option value="Failed">Failed</option>
+                <option value="Pending">Pending</option>
               </select>
             </div>
           </div>

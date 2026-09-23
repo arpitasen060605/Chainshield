@@ -40,26 +40,6 @@
   color: var(--text);
 }
 
-html.light {
-  --bg: #f8fafc;
-  --bg-elevated: #ffffff;
-  --bg-surface: #f4f7fb;
-  --bg-soft: #edf3f9;
-  --border: #d9e2ec;
-  --border-strong: #c9d5e1;
-  --text: #0f172a;
-  --text-muted: #475569;
-  --text-soft: #334155;
-  --text-subtle: #64748b;
-  --primary: #2563eb;
-  --primary-strong: #1d4ed8;
-  --success: #059669;
-  --warning: #d97706;
-  --danger: #dc2626;
-  --shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
-  color-scheme: light;
-}
-
 html, body, #root {
   min-height: 100%;
   background: var(--bg);
@@ -128,9 +108,6 @@ small, .muted {
   flex-direction: column;
   background: linear-gradient(180deg, #07111e 0%, #091827 100%);
   border-right: 1px solid var(--border);
-}
-html.light .sidebar {
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
 }
 .brand {
   height: 86px;
@@ -312,7 +289,6 @@ html.light .sidebar {
   gap: 8px;
   backdrop-filter: blur(6px);
 }
-html.light .topbar { background: rgba(255,255,255,0.9); }
 .topbar-spacer { flex: 1; }
 .icon-button {
   position: relative;
@@ -420,9 +396,6 @@ html.light .topbar { background: rgba(255,255,255,0.9); }
   font-size: 13px;
   transition: border-color 0.15s ease, background-color 0.15s ease;
 }
-html.light .date-button, html.light .select-button {
-  background: var(--bg-elevated);
-}
 .date-button:hover, .select-button:hover {
   background: rgba(148, 163, 184, 0.06);
   border-color: var(--border-strong);
@@ -440,7 +413,6 @@ html.light .date-button, html.light .select-button {
   align-items:center;
   gap:18px;
 }
-html.light .stat-card { background: linear-gradient(145deg, #ffffff 0%, #f8fbff 100%); }
 .stat-icon {
   width: 53px;
   height: 53px;
@@ -467,7 +439,6 @@ html.light .stat-card { background: linear-gradient(145deg, #ffffff 0%, #f8fbff 
   overflow: hidden;
   box-shadow: var(--shadow);
 }
-html.light .panel { background: linear-gradient(145deg, #ffffff 0%, #f8fbff 100%); }
 .panel-head {
   min-height: 58px;
   padding: 0 16px;
@@ -660,10 +631,6 @@ input, select, textarea {
   border-radius: 8px;
   padding: 0.7rem 0.85rem;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
-}
-html.light input, html.light select, html.light textarea {
-  background: #ffffff;
-  color: var(--text);
 }
 input::placeholder, textarea::placeholder { color: var(--text-subtle); }
 input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible {

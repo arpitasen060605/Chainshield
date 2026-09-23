@@ -332,6 +332,26 @@ export const verificationHistory = [
 
 export const auditLogs = [
   {
+    id: "LOG-8103",
+    timestamp: "2026-05-31 04:10 PM",
+    user: "Unknown User",
+    action: "Login",
+    resource: "Web Console Session (Failed Auth)",
+    incidentId: "-",
+    evidenceId: "-",
+    status: "FAILED"
+  },
+  {
+    id: "LOG-8102",
+    timestamp: "2026-05-31 03:45 PM",
+    user: "Elena Rostova",
+    action: "Evidence Verification",
+    resource: "EVD-8939 (phishing_email_headers.eml)",
+    incidentId: "INC-2026-002",
+    evidenceId: "EVD-8939",
+    status: "FAILED"
+  },
+  {
     id: "LOG-8101",
     timestamp: "2026-05-31 03:20 PM",
     user: "Elena Rostova",
@@ -345,11 +365,11 @@ export const auditLogs = [
     id: "LOG-8100",
     timestamp: "2026-05-31 02:45 PM",
     user: "Elena Rostova",
-    action: "Evidence Verified",
+    action: "Evidence Verification",
     resource: "EVD-8941 (exploit_tx_payload_0x8f.bin)",
     incidentId: "INC-2026-001",
     evidenceId: "EVD-8941",
-    status: "VERIFIED"
+    status: "SUCCESS"
   },
   {
     id: "LOG-8099",

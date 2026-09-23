@@ -213,12 +213,6 @@ const Login = () => {
                 </label>
 
                 <div className="relative">
-
-                  <Mail
-                    size={18}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
-                  />
-
                   <input
                     type="email"
                     name="email"
@@ -269,37 +263,36 @@ const Login = () => {
                 </div>
 
                 <div className="relative">
+                  <p className="text-xs text-slate-400 mb-1.5">
+                    Enter your password
+                  </p>
+            
 
-                  <Lock
-                    size={18}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
-                  />
-
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="Enter your password"
-                    required
-                    className="
-                      w-full
-                      h-12
-                      pl-11
-                      pr-11
-                      rounded-lg
-                      bg-[#07111f]
-                      border border-[#263a4e]
-                      text-sm
-                      text-white
-                      placeholder:text-slate-600
-                      outline-none
-                      transition
-                      focus:border-blue-500
-                      focus:ring-2
-                      focus:ring-blue-500/10
-                    "
-                  />
+        <input
+          type={showPassword ? "text" : "password"}
+          name="password"
+          value={formData.password}
+          onChange={handleChange}
+          placeholder="Enter your password"
+          required
+          className="
+            w-full
+            h-12
+            pl-12
+            pr-11
+            rounded-lg
+            bg-[#07111f]
+            border border-[#263a4e]
+            text-sm
+            text-white
+            placeholder:text-slate-600
+            outline-none
+            transition
+            focus:border-blue-500
+            focus:ring-2
+            focus:ring-blue-500/10
+          "
+        />
 
                   <button
                     type="button"

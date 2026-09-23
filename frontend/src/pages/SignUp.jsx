@@ -322,12 +322,6 @@ const Register = () => {
                 </label>
 
                 <div className="relative">
-
-                  <User
-                    size={18}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
-                  />
-
                   <input
                     type="text"
                     name="name"
@@ -384,10 +378,7 @@ const Register = () => {
 
                 <div className="relative">
 
-                  <Mail
-                    size={18}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
-                  />
+
 
                   <input
                     type="email"
@@ -429,11 +420,6 @@ const Register = () => {
                 </label>
 
                 <div className="relative">
-
-                  <Lock
-                    size={18}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
-                  />
 
                   <input
                     type={showPassword ? "text" : "password"}
@@ -499,12 +485,6 @@ const Register = () => {
                 </label>
 
                 <div className="relative">
-
-                  <Lock
-                    size={18}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
-                  />
-
                   <input
                     type={
                       showConfirmPassword
