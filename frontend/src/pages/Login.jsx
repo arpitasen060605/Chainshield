@@ -124,7 +124,7 @@ const Login = () => {
                 className="text-green-400 mb-3"
               />
 
-              <h3 className="text-sm font-semibold">+
+              <h3 className="text-sm font-semibold">
                 Evidence Integrity
               </h3>
 
@@ -263,11 +263,6 @@ const Login = () => {
                 </div>
 
                 <div className="relative">
-                  <p className="text-xs text-slate-400 mb-1.5">
-                    Enter your password
-                  </p>
-            
-
         <input
           type={showPassword ? "text" : "password"}
           name="password"
