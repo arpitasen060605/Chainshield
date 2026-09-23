@@ -27,7 +27,7 @@ export default function PlatformAdminDashboard() {
   const [companies, setCompanies] = useState([]);
   const [pendingAdmins, setPendingAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
+  const [updatingId, setUpdatingId] = useState(null);
   const [error, setError] = useState('');
   const [toast, setToast] = useState(null);
 
@@ -66,19 +66,69 @@ export default function PlatformAdminDashboard() {
     }
   };
 
-  const handleUpdateStatus = async (adminId, name, newStatus) => {
+  const handleUpdateStatus = async (adminId, name, newStatus, companyCode, companyId) => {
     try {
-      setActionLoading(true);
+      setUpdatingId(adminId);
       const res = await updateCompanyAdminStatus(adminId, newStatus);
       if (res.success) {
-        showToast(`Company Admin ${name} updated to ${newStatus}.`, 'success');
-        fetchData();
+        showToast(
+          newStatus === 'active'
+            ? `Company Admin ${name} approved successfully.`
+            : `Company Admin ${name} updated to ${newStatus}.`,
+          'success'
+        );
+
+        // Remove from pendingAdmins list
+        setPendingAdmins((prev) => prev.filter((adm) => (adm._id || adm.id) !== adminId));
+
+        // Update companies list in React state
+        setCompanies((prevCompanies) =>
+          prevCompanies.map((comp) => {
+            const matchesComp =
+              (companyId && (comp._id === companyId || comp.id === companyId)) ||
+              (companyCode && comp.code === companyCode);
+
+            const hasMatchingAdmin =
+              comp.companyAdmins?.some((a) => (a._id || a.id) === adminId) ||
+              (comp.companyAdmin && (comp.companyAdmin._id || comp.companyAdmin.id) === adminId);
+
+            if (matchesComp || hasMatchingAdmin) {
+              const updatedAdmins = comp.companyAdmins?.map((a) =>
+                (a._id || a.id) === adminId ? { ...a, status: newStatus, isApproved: newStatus === 'active' } : a
+              );
+
+              return {
+                ...comp,
+                status: newStatus === 'active' ? 'active' : comp.status,
+                adminStatus: newStatus,
+                ...(updatedAdmins ? { companyAdmins: updatedAdmins } : {}),
+                ...(comp.companyAdmin && (comp.companyAdmin._id || comp.companyAdmin.id) === adminId
+                  ? { companyAdmin: { ...comp.companyAdmin, status: newStatus, isApproved: newStatus === 'active' } }
+                  : {}),
+              };
+            }
+            return comp;
+          })
+        );
+
+        // Update stats state
+        setStats((prev) => {
+          if (!prev) return prev;
+          const isAct = newStatus === 'active';
+          const isRej = newStatus === 'rejected';
+          return {
+            ...prev,
+            pendingCompanyAdmins: Math.max(0, (prev.pendingCompanyAdmins || 0) - 1),
+            activeCompanyAdmins: isAct ? (prev.activeCompanyAdmins || 0) + 1 : prev.activeCompanyAdmins,
+            inactiveCompanyAdmins: isRej ? (prev.inactiveCompanyAdmins || 0) + 1 : prev.inactiveCompanyAdmins,
+          };
+        });
       }
     } catch (err) {
       const msg = err.response?.data?.message || `Failed to update ${name}.`;
       showToast(msg, 'error');
     } finally {
-      setActionLoading(false);
+      setUpdatingId(null);
     }
   };
 
@@ -174,6 +224,7 @@ export default function PlatformAdminDashboard() {
           </div>
 
           <button
+            type="button"
             onClick={fetchData}
             disabled={loading}
             className="self-start sm:self-auto flex items-center gap-2 px-4 py-2 bg-[#0c1929] hover:bg-[#13243a] text-slate-300 hover:text-white border border-[#1e344f] rounded-xl text-xs font-mono transition cursor-pointer disabled:opacity-50"
@@ -182,6 +233,29 @@ export default function PlatformAdminDashboard() {
             Refresh Telemetry
           </button>
         </div>
+
+        {/* Toast Alert Banner */}
+        {toast && (
+          <div
+            className={`p-4 rounded-xl border text-xs font-mono flex items-center justify-between transition shadow-lg ${
+              toast.type === 'error'
+                ? 'bg-red-500/10 border-red-500/30 text-red-400'
+                : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              {toast.type === 'error' ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
+              <span>{toast.msg}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setToast(null)}
+              className="text-slate-400 hover:text-white text-xs font-bold px-2 py-0.5 cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* Loading State */}
         {loading && (
@@ -265,37 +339,60 @@ export default function PlatformAdminDashboard() {
                         </td>
                       </tr>
                     ) : (
-                      pendingAdmins.map((adm) => (
-                        <tr key={adm._id || adm.id} className="hover:bg-[#0e223b]/50 transition">
-                          <td className="py-4 px-5 font-semibold text-white">{adm.name}</td>
-                          <td className="py-4 px-5 text-slate-300">{adm.email}</td>
-                          <td className="py-4 px-5 text-slate-200">{adm.companyName}</td>
-                          <td className="py-4 px-5">
-                            <span className="px-2 py-0.5 bg-[#0e1e33] border border-[#233a59] rounded text-blue-300 font-bold">
-                              {adm.companyCode}
-                            </span>
-                          </td>
-                          <td className="py-4 px-5">{getStatusBadge(adm.status)}</td>
-                          <td className="py-4 px-5 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                onClick={() => handleUpdateStatus(adm._id || adm.id, adm.name, 'active')}
-                                disabled={actionLoading}
-                                className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 rounded-lg text-xs font-mono font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                              >
-                                <CheckCircle2 size={14} /> Approve
-                              </button>
-                              <button
-                                onClick={() => handleUpdateStatus(adm._id || adm.id, adm.name, 'rejected')}
-                                disabled={actionLoading}
-                                className="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/40 rounded-lg text-xs font-mono font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                              >
-                                <XCircle size={14} /> Reject
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
+                      pendingAdmins.map((adm) => {
+                        const targetId = adm._id || adm.id;
+                        const isUpdating = updatingId === targetId;
+
+                        return (
+                          <tr key={targetId} className="hover:bg-[#0e223b]/50 transition">
+                            <td className="py-4 px-5 font-semibold text-white">{adm.name}</td>
+                            <td className="py-4 px-5 text-slate-300">{adm.email}</td>
+                            <td className="py-4 px-5 text-slate-200">{adm.companyName}</td>
+                            <td className="py-4 px-5">
+                              <span className="px-2 py-0.5 bg-[#0e1e33] border border-[#233a59] rounded text-blue-300 font-bold">
+                                {adm.companyCode}
+                              </span>
+                            </td>
+                            <td className="py-4 px-5">{getStatusBadge(adm.status)}</td>
+                            <td className="py-4 px-5 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    handleUpdateStatus(targetId, adm.name, 'active', adm.companyCode, adm.companyId);
+                                  }}
+                                  disabled={isUpdating}
+                                  className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 rounded-lg text-xs font-mono font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                                >
+                                  {isUpdating ? (
+                                    <RefreshCw size={14} className="animate-spin" />
+                                  ) : (
+                                    <CheckCircle2 size={14} />
+                                  )}
+                                  Approve
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    handleUpdateStatus(targetId, adm.name, 'rejected', adm.companyCode, adm.companyId);
+                                  }}
+                                  disabled={isUpdating}
+                                  className="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/40 rounded-lg text-xs font-mono font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                                >
+                                  {isUpdating ? (
+                                    <RefreshCw size={14} className="animate-spin" />
+                                  ) : (
+                                    <XCircle size={14} />
+                                  )}
+                                  Reject
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>

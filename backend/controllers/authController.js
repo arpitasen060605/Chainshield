@@ -19,18 +19,74 @@ export const registerUser = async (req,res,next) => {
       return res.status(400).json({ success: false, message: 'Platform Admin role cannot be self-assigned.' });
     }
 
-    const company = await Company.findOne({ code:String(companyCode).trim().toUpperCase(), status:'active' });
-    if (!company) return res.status(400).json({success:false,message:'Invalid or inactive company code'});
+    const normalizedCode = String(companyCode).trim().toUpperCase();
+    const normalizedEmail = email.trim().toLowerCase();
 
-    const normalizedEmail=email.trim().toLowerCase();
+    const isCompanyAdmin = (requestedType === 'admin' || requestedType === 'company_admin');
+
+    if (isCompanyAdmin && normalizedCode.length !== 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Company Code must be exactly 6 characters long for Admin signup.',
+      });
+    }
+
     if (await User.findOne({email:normalizedEmail})) return res.status(400).json({success:false,message:'User with this email already exists'});
 
-    const userRole = (requestedType === 'admin' || requestedType === 'company_admin') ? 'admin' : 'pending';
+    let company;
 
-    const user=await User.create({name:name.trim(),email:normalizedEmail,password,companyId:company._id,role:userRole,status:'pending'});
-    await createAuditLog({action:'AUTH_USER_REGISTERED_PENDING',user,resourceType:'User',resourceId:user._id,details:`${user.email} joined ${company.name} as ${userRole} and is awaiting approval`,req});
+    if (isCompanyAdmin) {
+      // 1. COMPANY ADMIN SIGNUP
+      company = await Company.findOne({ code: normalizedCode });
+      if (!company) {
+        // Create new company with status 'pending' if it does not exist
+        company = await Company.create({
+          name: `${name.trim()}'s Organization`,
+          code: normalizedCode,
+          industry: 'Cybersecurity',
+          status: 'pending',
+        });
+      }
+    } else {
+      // 2. EMPLOYEE SIGNUP
+      company = await Company.findOne({ code: normalizedCode, status: 'active' });
+      if (!company) {
+        return res.status(400).json({ success: false, message: 'Invalid or inactive company code' });
+      }
+    }
+
+    const userRole = isCompanyAdmin ? 'admin' : 'pending';
+
+    const user = await User.create({
+      name: name.trim(),
+      email: normalizedEmail,
+      password,
+      companyId: company._id,
+      role: userRole,
+      status: 'pending',
+    });
+
+    if (isCompanyAdmin && !company.createdBy) {
+      company.createdBy = user._id;
+      await company.save();
+    }
+
+    await createAuditLog({
+      action: 'AUTH_USER_REGISTERED_PENDING',
+      user,
+      resourceType: 'User',
+      resourceId: user._id,
+      details: `${user.email} registered for ${company.name || company.code} as ${userRole} and is awaiting approval`,
+      req,
+    });
+
     const approvalTarget = userRole === 'admin' ? 'Platform Admin' : 'Company Admin';
-    return res.status(201).json({success:true,message:`Registration submitted. Your account is pending ${approvalTarget} approval.`,pending:true,user:safe(user)});
+    return res.status(201).json({
+      success: true,
+      message: `Registration submitted. Your account is pending ${approvalTarget} approval.`,
+      pending: true,
+      user: safe(user),
+    });
   } catch(e){ next(e); }
 };
 

@@ -4,7 +4,7 @@ const companySchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   code: { type: String, required: true, unique: true, uppercase: true, trim: true, index: true },
   industry: { type: String, default: 'Cybersecurity' },
-  status: { type: String, enum: ['active', 'suspended'], default: 'active' },
+  status: { type: String, enum: ['pending', 'active', 'suspended'], default: 'pending' },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
 }, { timestamps: true });
 

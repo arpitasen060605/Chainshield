@@ -102,14 +102,9 @@ export default function Sidebar({ onNavigate }) {
   }, [location.pathname]);
 
   const handleParentClick = (item) => {
-    if (item.children) {
+    if (item.children && item.children.length > 0) {
       const isCurrentlyOpen = openSection === item.label;
       setOpenSection(isCurrentlyOpen ? null : item.label);
-
-      if (!isCurrentlyOpen && item.path && item.path !== "#") {
-        navigate(item.path);
-        if (onNavigate) onNavigate();
-      }
     } else if (item.path && item.path !== "#") {
       navigate(item.path);
       if (onNavigate) onNavigate();

@@ -56,6 +56,15 @@ export const updateUserRole = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Access denied. Administrator privileges required.' });
     }
 
+    // Reject if Company Admin attempts to modify their own account
+    const isCompanyAdmin = req.user.role === 'admin' || req.user.role === 'company_admin';
+    if (isCompanyAdmin && String(req.params.id || '') === String(req.user._id || '')) {
+      return res.status(403).json({
+        success: false,
+        message: 'Company Admin cannot modify their own account',
+      });
+    }
+
     const requestedRole = String(req.body.role || '').toLowerCase();
 
     // Prevent assigning admin role through the employee role API
@@ -79,14 +88,6 @@ export const updateUserRole = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         message: 'User not found or belongs to another company.',
-      });
-    }
-
-    // Prevent changing self if current user is admin trying to remove admin role
-    if (String(u._id) === String(req.user._id)) {
-      return res.status(400).json({
-        success: false,
-        message: 'You cannot alter your own admin role using this endpoint.',
       });
     }
 
@@ -127,6 +128,15 @@ export const updateUserStatus = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Access denied. Administrator privileges required.' });
     }
 
+    // Reject if Company Admin attempts to modify their own account
+    const isCompanyAdmin = req.user.role === 'admin' || req.user.role === 'company_admin';
+    if (isCompanyAdmin && String(req.params.id || '') === String(req.user._id || '')) {
+      return res.status(403).json({
+        success: false,
+        message: 'Company Admin cannot modify their own account',
+      });
+    }
+
     const status = String(req.body.status || '').toLowerCase();
     if (!['active', 'inactive', 'pending', 'rejected'].includes(status)) {
       return res.status(400).json({ success: false, message: 'Invalid status' });
@@ -135,10 +145,6 @@ export const updateUserStatus = async (req, res, next) => {
     const u = await User.findById(req.params.id);
     if (!u || String(u.companyId || '') !== String(req.user.companyId || '')) {
       return res.status(404).json({ success: false, message: 'User not found or belongs to another company.' });
-    }
-
-    if (String(u._id) === String(req.user._id) && status !== 'active') {
-      return res.status(400).json({ success: false, message: 'You cannot deactivate yourself' });
     }
 
     u.status = status;

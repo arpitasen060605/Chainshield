@@ -51,6 +51,13 @@ const Register = () => {
     e.preventDefault();
     setError("");
 
+    const cleanCode = (formData.companyCode || "").trim().toUpperCase();
+
+    if (registrationType === "admin" && cleanCode.length !== 6) {
+      setError("Company Code must be exactly 6 characters long for Admin signup.");
+      return;
+    }
+
     // Password validation
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
@@ -67,7 +74,7 @@ const Register = () => {
     try {
       const result = await register({
         name: formData.name,
-        companyCode: formData.companyCode,
+        companyCode: cleanCode,
         email: formData.email,
         password: formData.password,
         registrationType,
@@ -361,11 +368,16 @@ const Register = () => {
                   name="companyCode"
                   value={formData.companyCode}
                   onChange={handleChange}
-                  placeholder="e.g. TECHNOVA"
+                  placeholder={registrationType === "admin" ? "e.g. ALPHA1 (6 characters)" : "e.g. TECHNOVA"}
                   required
-                  className="w-full h-12 px-4 rounded-lg bg-[#07111f] border border-[#263a4e] text-sm text-white placeholder:text-slate-600 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+                  maxLength={registrationType === "admin" ? 6 : undefined}
+                  className="w-full h-12 px-4 rounded-lg bg-[#07111f] border border-[#263a4e] text-sm text-white placeholder:text-slate-600 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 font-mono uppercase"
                 />
-                <p className="text-xs text-slate-500 mt-2">Your company administrator provides this code.</p>
+                <p className="text-xs text-slate-500 mt-2">
+                  {registrationType === "admin"
+                    ? "Company Code must be exactly 6 characters."
+                    : "Your company administrator provides this code."}
+                </p>
               </div>
 
               {/* Email */}

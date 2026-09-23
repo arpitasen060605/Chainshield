@@ -61,15 +61,20 @@ export const getPlatformCompanies = async (req, res, next) => {
 export const getPlatformStats = async (req, res, next) => {
   try {
     const totalCompanies = await Company.countDocuments();
+    const validCompanyIds = await Company.find().distinct('_id');
+
     const activeCompanyAdmins = await User.countDocuments({
+      companyId: { $in: validCompanyIds },
       role: { $in: ['admin', 'company_admin'] },
       status: 'active',
     });
     const inactiveCompanyAdmins = await User.countDocuments({
+      companyId: { $in: validCompanyIds },
       role: { $in: ['admin', 'company_admin'] },
       status: 'inactive',
     });
     const pendingCompanyAdmins = await User.countDocuments({
+      companyId: { $in: validCompanyIds },
       role: { $in: ['admin', 'company_admin', 'ADMIN', 'COMPANY_ADMIN'] },
       status: { $in: ['pending', 'PENDING'] },
     });
@@ -95,7 +100,10 @@ export const getPlatformStats = async (req, res, next) => {
  */
 export const getPendingCompanyAdmins = async (req, res, next) => {
   try {
+    const validCompanyIds = await Company.find().distinct('_id');
+
     const pendingAdmins = await User.find({
+      companyId: { $in: validCompanyIds },
       role: { $in: ['admin', 'company_admin', 'ADMIN', 'COMPANY_ADMIN'] },
       status: { $in: ['pending', 'PENDING'] },
     })
@@ -150,6 +158,10 @@ export const updateCompanyAdminStatus = async (req, res, next) => {
 
     u.status = targetStatus;
     await u.save();
+
+    if (targetStatus === 'active' && u.companyId) {
+      await Company.findByIdAndUpdate(u.companyId, { status: 'active' });
+    }
 
     return res.status(200).json({
       success: true,

@@ -501,6 +501,13 @@ export default function UsersRoles() {
                 ) : (
                   filteredUsers.map((u) => {
                     const userId = u._id || u.id;
+                    const currentUserId = currentUser?._id || currentUser?.id;
+                    const isSelf = String(userId || "") === String(currentUserId || "");
+                    const isCompanyAdmin =
+                      String(currentUser?.role || "").trim().toLowerCase() === "admin" ||
+                      String(currentUser?.role || "").trim().toLowerCase() === "company_admin";
+                    const isSelfCompanyAdmin = isSelf && isCompanyAdmin;
+
                     const userRole = (u.role || "pending").toLowerCase();
                     const userStatus = (u.status || "pending").toLowerCase();
                     const roleBadge = getRoleBadgeStyle(userRole);
@@ -628,40 +635,44 @@ export default function UsersRoles() {
                             ) : (
                               <>
                                 {/* Change Role Button */}
-                                <button
-                                  onClick={() => {
-                                    setRoleEditUser(u);
-                                    const validRoles = ["incident_responder", "lead_investigator", "forensic_analyst", "auditor"];
-                                    const currentRoleNormalized = (u.role || "").toLowerCase();
-                                    const initialRole = validRoles.includes(currentRoleNormalized) ? currentRoleNormalized : "incident_responder";
-                                    setNewRoleValue(initialRole);
-                                  }}
-                                  className="px-2.5 py-1.5 bg-[#0e2238] hover:bg-[#163352] text-slate-300 border border-[#213f63] rounded-lg text-xs font-semibold transition flex items-center gap-1 cursor-pointer"
-                                  title="Change employee role"
-                                >
-                                  <Shield size={13} /> Role
-                                </button>
+                                {!isSelfCompanyAdmin && (
+                                  <button
+                                    onClick={() => {
+                                      setRoleEditUser(u);
+                                      const validRoles = ["incident_responder", "lead_investigator", "forensic_analyst", "auditor"];
+                                      const currentRoleNormalized = (u.role || "").toLowerCase();
+                                      const initialRole = validRoles.includes(currentRoleNormalized) ? currentRoleNormalized : "incident_responder";
+                                      setNewRoleValue(initialRole);
+                                    }}
+                                    className="px-2.5 py-1.5 bg-[#0e2238] hover:bg-[#163352] text-slate-300 border border-[#213f63] rounded-lg text-xs font-semibold transition flex items-center gap-1 cursor-pointer"
+                                    title="Change employee role"
+                                  >
+                                    <Shield size={13} /> Role
+                                  </button>
+                                )}
 
                                 {/* Activate / Deactivate Toggle Button */}
-                                <button
-                                  disabled={actionLoading}
-                                  onClick={() => handleToggleStatus(u)}
-                                  className={`px-2.5 py-1.5 border rounded-lg text-xs font-semibold transition flex items-center gap-1 cursor-pointer disabled:opacity-50 ${
-                                    userStatus === "active"
-                                      ? "bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/30"
-                                      : "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-                                  }`}
-                                >
-                                  {userStatus === "active" ? (
-                                    <>
-                                      <UserX size={13} /> Deactivate
-                                    </>
-                                  ) : (
-                                    <>
-                                      <UserCheck size={13} /> Activate
-                                    </>
-                                  )}
-                                </button>
+                                {!isSelfCompanyAdmin && (
+                                  <button
+                                    disabled={actionLoading}
+                                    onClick={() => handleToggleStatus(u)}
+                                    className={`px-2.5 py-1.5 border rounded-lg text-xs font-semibold transition flex items-center gap-1 cursor-pointer disabled:opacity-50 ${
+                                      userStatus === "active"
+                                        ? "bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/30"
+                                        : "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                                    }`}
+                                  >
+                                    {userStatus === "active" ? (
+                                      <>
+                                        <UserX size={13} /> Deactivate
+                                      </>
+                                    ) : (
+                                      <>
+                                        <UserCheck size={13} /> Activate
+                                      </>
+                                    )}
+                                  </button>
+                                )}
                               </>
                             )}
                           </div>
