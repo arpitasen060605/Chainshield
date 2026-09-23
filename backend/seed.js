@@ -13,7 +13,7 @@ const employees = [
 
 const run = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/chainshield');
+    await mongoose.connect(process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/chainshield');
     const company = await Company.findOneAndUpdate(
       { code: 'TECHNOVA' },
       { name: 'TechNova Security', code: 'TECHNOVA', industry: 'Technology', status: 'active' },
