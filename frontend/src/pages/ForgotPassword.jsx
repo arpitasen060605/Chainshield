@@ -64,14 +64,25 @@ const ForgotPassword = () => {
 
     try {
       const res = await forgotPassword(email.trim());
-      setLoading(false);
-      setInfoMessage(res.message || "If an account with that email exists, a 6-digit OTP code has been sent.");
-      setStep(2);
-      setCooldown(60); // 60 seconds cooldown for resend
+      if (res && res.success) {
+        setInfoMessage(res.message || "If an account with that email exists, a 6-digit OTP code has been sent.");
+        setStep(2);
+        setCooldown(60); // 60 seconds cooldown for resend
+      } else {
+        setError(res?.message || "Failed to send reset OTP code. Please try again.");
+      }
     } catch (err) {
-      setLoading(false);
-      const msg = err.response?.data?.message || "Failed to send reset OTP code. Please try again.";
+      let msg = "Failed to send reset OTP code. Please try again.";
+      if (err.code === "ECONNABORTED" || err.message?.includes("timeout")) {
+        msg = "Email service request timed out. Please check SMTP configuration or try again.";
+      } else if (err.response?.data?.message) {
+        msg = err.response.data.message;
+      } else if (err.message) {
+        msg = err.message;
+      }
       setError(msg);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -84,15 +95,26 @@ const ForgotPassword = () => {
 
     try {
       const res = await forgotPassword(email.trim());
-      setLoading(false);
-      setInfoMessage(res.message || "A new 6-digit OTP code has been sent to your email.");
-      setOtp(["", "", "", "", "", ""]);
-      setCooldown(60);
-      otpInputsRef.current[0]?.focus();
+      if (res && res.success) {
+        setInfoMessage(res.message || "A new 6-digit OTP code has been sent to your email.");
+        setOtp(["", "", "", "", "", ""]);
+        setCooldown(60);
+        otpInputsRef.current[0]?.focus();
+      } else {
+        setError(res?.message || "Failed to resend OTP. Please try again.");
+      }
     } catch (err) {
-      setLoading(false);
-      const msg = err.response?.data?.message || "Failed to resend OTP. Please try again.";
+      let msg = "Failed to resend OTP. Please try again.";
+      if (err.code === "ECONNABORTED" || err.message?.includes("timeout")) {
+        msg = "Email service request timed out. Please check SMTP configuration or try again.";
+      } else if (err.response?.data?.message) {
+        msg = err.response.data.message;
+      } else if (err.message) {
+        msg = err.message;
+      }
       setError(msg);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -143,17 +165,17 @@ const ForgotPassword = () => {
 
     try {
       const res = await verifyResetOtp(email.trim(), fullOtp);
-      setLoading(false);
-      if (res.success && res.resetToken) {
+      if (res && res.success && res.resetToken) {
         setResetToken(res.resetToken);
         setStep(3);
       } else {
-        setError(res.message || "Failed to verify OTP.");
+        setError(res?.message || "Failed to verify OTP.");
       }
     } catch (err) {
-      setLoading(false);
-      const msg = err.response?.data?.message || "Invalid or expired OTP. Please try again.";
+      const msg = err.response?.data?.message || err.message || "Invalid or expired OTP. Please try again.";
       setError(msg);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -179,16 +201,16 @@ const ForgotPassword = () => {
         newPassword,
         confirmPassword,
       });
-      setLoading(false);
-      if (res.success) {
+      if (res && res.success) {
         setStep(4);
       } else {
-        setError(res.message || "Failed to reset password.");
+        setError(res?.message || "Failed to reset password.");
       }
     } catch (err) {
-      setLoading(false);
-      const msg = err.response?.data?.message || "Failed to reset password. Token may have expired.";
+      const msg = err.response?.data?.message || err.message || "Failed to reset password. Token may have expired.";
       setError(msg);
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -1,50 +1,52 @@
 import nodemailer from 'nodemailer';
 
 const getTransporter = () => {
-  const host = process.env.BREVO_SMTP_HOST || 'smtp-relay.brevo.com';
-  const port = parseInt(process.env.BREVO_SMTP_PORT || '587', 10);
-  const user = process.env.BREVO_SMTP_USER;
-  const pass = process.env.BREVO_SMTP_KEY;
+  const host = process.env.BREVO_SMTP_HOST || process.env.SMTP_HOST || 'smtp-relay.brevo.com';
+  const port = parseInt(process.env.BREVO_SMTP_PORT || process.env.SMTP_PORT || '587', 10);
+  const user = process.env.BREVO_SMTP_USER || process.env.SMTP_USER || process.env.SMTP_USERNAME;
+  const pass = process.env.BREVO_SMTP_KEY || process.env.BREVO_SMTP_PASS || process.env.SMTP_PASS || process.env.SMTP_PASSWORD;
 
   if (!user || !pass) {
-    console.warn('[EMAIL WARNING] Missing BREVO_SMTP_USER or BREVO_SMTP_KEY in environment variables.');
+    console.warn('[EMAIL WARNING] Missing SMTP user or password/key in environment variables.');
   }
 
   return nodemailer.createTransport({
     host,
     port,
-    secure: port === 465, // true for 465, false for 587
+    secure: port === 465, // true for 465 (SSL/TLS), false for 587 (STARTTLS)
     auth: {
       user,
       pass,
     },
+    // Set socket & connection timeouts to prevent endless hanging
+    connectionTimeout: 10000, // 10 seconds
+    greetingTimeout: 10000,   // 10 seconds
+    socketTimeout: 15000,     // 15 seconds
   });
 };
 
 /**
- * Send 6-digit OTP email via Brevo SMTP
+ * Send 6-digit OTP email via SMTP / Nodemailer
  * @param {Object} params - { toEmail, otp }
  */
 export const sendOtpEmail = async ({ toEmail, otp }) => {
-  const host = process.env.BREVO_SMTP_HOST || 'smtp-relay.brevo.com';
-  const port = parseInt(process.env.BREVO_SMTP_PORT || '587', 10);
-  const user = process.env.BREVO_SMTP_USER;
-  const pass = process.env.BREVO_SMTP_KEY;
-  const rawFrom = process.env.BREVO_FROM_EMAIL || user;
+  const host = process.env.BREVO_SMTP_HOST || process.env.SMTP_HOST || 'smtp-relay.brevo.com';
+  const port = parseInt(process.env.BREVO_SMTP_PORT || process.env.SMTP_PORT || '587', 10);
+  const user = process.env.BREVO_SMTP_USER || process.env.SMTP_USER || process.env.SMTP_USERNAME;
+  const pass = process.env.BREVO_SMTP_KEY || process.env.BREVO_SMTP_PASS || process.env.SMTP_PASS || process.env.SMTP_PASSWORD;
+  const rawFrom = process.env.BREVO_FROM_EMAIL || process.env.SMTP_FROM || process.env.FROM_EMAIL || user;
 
-  console.log(`[EMAIL DIAGNOSTIC] Host: ${host}:${port} | User Configured: ${Boolean(user)} | Key Configured: ${Boolean(pass)} | From Configured: ${Boolean(rawFrom)}`);
+  console.log(`[EMAIL] Email send started for recipient: ${toEmail} | Host: ${host}:${port} | User Configured: ${Boolean(user)} | Key Configured: ${Boolean(pass)} | From Configured: ${Boolean(rawFrom)}`);
 
   if (!user || !pass) {
-    const errorMsg = 'Brevo SMTP user or key is missing in environment variables.';
-    console.error('[EMAIL] SMTP connection: FAILED');
-    console.error('[EMAIL] Error code/message:', errorMsg);
+    const errorMsg = 'SMTP credentials (user or password/key) are missing in environment variables.';
+    console.error('[EMAIL] SMTP connection: FAILED - Missing credentials');
     throw new Error(errorMsg);
   }
 
   if (!rawFrom) {
-    const errorMsg = 'BREVO_FROM_EMAIL is missing in environment variables.';
-    console.error('[EMAIL] SMTP connection: FAILED');
-    console.error('[EMAIL] Error code/message:', errorMsg);
+    const errorMsg = 'Sender email (BREVO_FROM_EMAIL or SMTP_FROM) is missing in environment variables.';
+    console.error('[EMAIL] SMTP connection: FAILED - Missing sender email');
     throw new Error(errorMsg);
   }
 
@@ -55,16 +57,6 @@ export const sendOtpEmail = async ({ toEmail, otp }) => {
   }
 
   const transporter = getTransporter();
-
-  // Test SMTP authentication connection
-  try {
-    await transporter.verify();
-    console.log('[EMAIL] SMTP connection: SUCCESS');
-  } catch (verifyErr) {
-    console.error('[EMAIL] SMTP connection: FAILED');
-    console.error('[EMAIL] Error code/message:', verifyErr.message || verifyErr.code || verifyErr);
-    throw verifyErr;
-  }
 
   const htmlContent = `
     <!DOCTYPE html>

@@ -117,6 +117,8 @@ export const forgotPassword = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Email address is required' });
     }
     const normalizedEmail = email.trim().toLowerCase();
+    console.log(`[AUTH] Forgot password OTP generation started for: ${normalizedEmail}`);
+
     const genericResponse = {
       success: true,
       message: 'If an account with that email exists, a 6-digit OTP code has been sent.',
@@ -124,6 +126,7 @@ export const forgotPassword = async (req, res, next) => {
 
     const user = await User.findOne({ email: normalizedEmail }).select('+resetPasswordOtpHash +resetPasswordOtpExpires +resetPasswordOtpAttempts +resetPasswordOtpLastSent');
     if (!user) {
+      console.log(`[AUTH] No user found for ${normalizedEmail}, returning standard response`);
       return res.json(genericResponse);
     }
 
@@ -131,6 +134,7 @@ export const forgotPassword = async (req, res, next) => {
       const secondsSinceLastSent = (Date.now() - new Date(user.resetPasswordOtpLastSent).getTime()) / 1000;
       if (secondsSinceLastSent < 60) {
         const remaining = Math.ceil(60 - secondsSinceLastSent);
+        console.warn(`[AUTH] Rate limit cooldown active for ${normalizedEmail}. ${remaining}s remaining`);
         return res.status(429).json({
           success: false,
           message: `Please wait ${remaining} second${remaining > 1 ? 's' : ''} before requesting another OTP.`,
@@ -149,11 +153,22 @@ export const forgotPassword = async (req, res, next) => {
     user.resetPasswordTokenExpires = undefined;
 
     await user.save();
+    console.log(`[AUTH] OTP hashed and stored in DB for ${normalizedEmail}`);
 
+    // Send OTP email - if email fails, report the error back to user
     try {
+      console.log(`[AUTH] Email send started for ${normalizedEmail}`);
       await sendOtpEmail({ toEmail: user.email, otp });
+      console.log(`[AUTH] Email send succeeded for ${normalizedEmail}`);
     } catch (emailErr) {
-      console.error('[Email Error] Failed to send Brevo OTP email:', emailErr.message);
+      console.error(`[AUTH] Email send failed for ${normalizedEmail}:`, emailErr.message);
+      const safeErrorMessage = emailErr.message && !emailErr.message.includes('key') && !emailErr.message.includes('pass')
+        ? `Failed to send OTP email: ${emailErr.message}`
+        : 'Failed to send OTP email due to server email service error. Please try again later.';
+      return res.status(500).json({
+        success: false,
+        message: safeErrorMessage,
+      });
     }
 
     await createAuditLog({
@@ -165,6 +180,7 @@ export const forgotPassword = async (req, res, next) => {
       req,
     });
 
+    console.log(`[AUTH] Forgot password API request completed for ${normalizedEmail}`);
     return res.json(genericResponse);
   } catch (e) {
     next(e);
