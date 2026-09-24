@@ -26,6 +26,7 @@ export default function AllIncidents() {
   const [error, setError] = useState("");
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [severityFilter, setSeverityFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
@@ -46,7 +47,7 @@ export default function AllIncidents() {
       const res = await getIncidents({
         severity: severityFilter,
         status: statusFilter,
-        search: searchQuery,
+        search: debouncedSearchQuery,
         type: typeFilter,
         page,
         limit,
@@ -71,11 +72,19 @@ export default function AllIncidents() {
   };
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
     fetchIncidents();
-  }, [severityFilter, statusFilter, searchQuery, typeFilter, page]);
+  }, [severityFilter, statusFilter, debouncedSearchQuery, typeFilter, page]);
 
   const resetFilters = () => {
     setSearchQuery("");
+    setDebouncedSearchQuery("");
     setSeverityFilter("All");
     setStatusFilter("All");
     setTypeFilter("All");

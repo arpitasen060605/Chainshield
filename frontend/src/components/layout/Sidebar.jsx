@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   LayoutDashboard,
   Shield,
@@ -65,18 +65,9 @@ export default function Sidebar({ onNavigate }) {
   const location = useLocation();
   const { user, logout } = useAuth();
 
-  const storedUser = (() => {
-    try {
-      const item = localStorage.getItem("chainshield_user");
-      return item ? JSON.parse(item) : null;
-    } catch {
-      return null;
-    }
-  })();
-
-  const currentUser = user || storedUser;
+  const currentUser = user;
   const effectiveRole = currentUser?.role;
-  const navGroups = buildNavGroups(effectiveRole);
+  const navGroups = useMemo(() => buildNavGroups(effectiveRole), [effectiveRole]);
 
   const initials = currentUser?.name
     ? currentUser.name

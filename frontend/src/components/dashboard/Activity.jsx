@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Upload, ShieldCheck, FileText, UserCheck, ShieldAlert } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -10,7 +11,7 @@ function getActionToneAndIcon(action = "") {
   return { tone: "blue", icon: UserCheck };
 }
 
-export default function Activity({ recentActivity = [] }) {
+const Activity = memo(function Activity({ recentActivity = [] }) {
   const navigate = useNavigate();
   const recentLogs = Array.isArray(recentActivity) ? recentActivity.slice(0, 5) : [];
 
@@ -59,4 +60,6 @@ export default function Activity({ recentActivity = [] }) {
       </button>
     </div>
   );
-}
+});
+
+export default Activity;

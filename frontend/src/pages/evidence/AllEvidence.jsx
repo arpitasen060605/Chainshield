@@ -26,6 +26,7 @@ export default function AllEvidence() {
   const [error, setError] = useState("");
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [fileTypeFilter, setFileTypeFilter] = useState("All");
   const [incidentFilter, setIncidentFilter] = useState(searchParams.get("incidentId") || "All");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -55,7 +56,7 @@ export default function AllEvidence() {
         incidentId: incidentFilter,
         evidenceType: fileTypeFilter,
         status: statusFilter,
-        search: searchQuery,
+        search: debouncedSearchQuery,
         page,
         limit,
       });
@@ -83,8 +84,15 @@ export default function AllEvidence() {
   }, []);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
     fetchEvidenceList();
-  }, [incidentFilter, fileTypeFilter, statusFilter, searchQuery, page]);
+  }, [incidentFilter, fileTypeFilter, statusFilter, debouncedSearchQuery, page]);
 
   const copyToClipboard = (text, id) => {
     navigator.clipboard.writeText(text);
@@ -245,6 +253,7 @@ export default function AllEvidence() {
                           <button
                             onClick={() => {
                               setSearchQuery("");
+                              setDebouncedSearchQuery("");
                               setFileTypeFilter("All");
                               setIncidentFilter("All");
                               setStatusFilter("All");

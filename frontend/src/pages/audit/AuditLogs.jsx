@@ -33,6 +33,7 @@ export default function AuditLogs() {
 
   // Filter States
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [actionFilter, setActionFilter] = useState("All");
   const [userFilter, setUserFilter] = useState("All");
   const [dateFilter, setDateFilter] = useState("All");
@@ -42,7 +43,7 @@ export default function AuditLogs() {
     try {
       setLoading(true);
       setError("");
-      const res = await getAuditLogs({ action: actionFilter, user: userFilter, search: searchQuery });
+      const res = await getAuditLogs({ action: actionFilter, user: userFilter, search: debouncedSearchQuery });
       if (res.success && Array.isArray(res.logs)) {
         setRealLogs(res.logs);
       } else {
@@ -57,8 +58,15 @@ export default function AuditLogs() {
   };
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
     fetchAuditTelemetry();
-  }, [actionFilter, userFilter]);
+  }, [actionFilter, userFilter, debouncedSearchQuery]);
 
   const logsSource = realLogs.length > 0 ? realLogs : mockAuditLogs;
 
@@ -312,6 +320,7 @@ export default function AuditLogs() {
             <button
               onClick={() => {
                 setSearchQuery("");
+                setDebouncedSearchQuery("");
                 setActionFilter("All");
                 setUserFilter("All");
                 setDateFilter("All");

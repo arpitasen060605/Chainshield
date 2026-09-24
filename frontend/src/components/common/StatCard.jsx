@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { FileText, Shield, Folder, CircleCheck, ShieldAlert, Clock, Lock, CheckCircle2 } from "lucide-react";
 
 const icons = {
@@ -11,7 +12,7 @@ const icons = {
   lock: Lock,
 };
 
-export default function StatCard({ title, value, meta, tone, icon }) {
+const StatCard = memo(function StatCard({ title, value, meta, tone, icon }) {
   const Icon = icons[icon] || Shield;
 
   return (
@@ -27,4 +28,6 @@ export default function StatCard({ title, value, meta, tone, icon }) {
       </div>
     </div>
   );
-}
+});
+
+export default StatCard;

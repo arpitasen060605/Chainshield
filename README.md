@@ -97,7 +97,6 @@ Storage (Cloud Vault)  →  Chain of Custody (Handoff Logged)  →  Blockchain (
   ↓
 Verification (File vs DB vs Smart Contract)  →  Audit Log  →  Forensic Report
 ```
-
 ## 8. User Roles & RBAC
 | Role Key | Name | Access Scope & Permissions |
 |---|---|---|

@@ -1,6 +1,7 @@
+import { memo } from "react";
 import { useNavigate } from "react-router-dom";
 
-export default function VerificationSummary({ statsData }) {
+const VerificationSummary = memo(function VerificationSummary({ statsData }) {
   const navigate = useNavigate();
   const totalEvidence = statsData?.totalEvidence ?? 0;
   const verifiedCount = statsData?.verifiedEvidence ?? 0;
@@ -44,4 +45,6 @@ export default function VerificationSummary({ statsData }) {
       </button>
     </div>
   );
-}
+});
+
+export default VerificationSummary;

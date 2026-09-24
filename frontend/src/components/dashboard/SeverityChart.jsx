@@ -1,6 +1,7 @@
+import { memo, useMemo } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
 
-export default function SeverityChart({ severityBreakdown, statsData }) {
+const SeverityChart = memo(function SeverityChart({ severityBreakdown, statsData }) {
   const critical = severityBreakdown?.critical ?? statsData?.criticalIncidents ?? 0;
   const high = severityBreakdown?.high ?? statsData?.highIncidents ?? 0;
   const medium = severityBreakdown?.medium ?? statsData?.mediumIncidents ?? 0;
@@ -8,14 +9,20 @@ export default function SeverityChart({ severityBreakdown, statsData }) {
 
   const total = critical + high + medium + low;
 
-  const data = [
-    { name: "Critical", value: critical, color: "#ef4444" },
-    { name: "High", value: high, color: "#f97316" },
-    { name: "Medium", value: medium, color: "#facc15" },
-    { name: "Low", value: low, color: "#22c55e" },
-  ];
+  const data = useMemo(
+    () => [
+      { name: "Critical", value: critical, color: "#ef4444" },
+      { name: "High", value: high, color: "#f97316" },
+      { name: "Medium", value: medium, color: "#facc15" },
+      { name: "Low", value: low, color: "#22c55e" },
+    ],
+    [critical, high, medium, low]
+  );
 
-  const chartData = total > 0 ? data : [{ name: "No incidents", value: 1, color: "#1f2937" }];
+  const chartData = useMemo(
+    () => (total > 0 ? data : [{ name: "No incidents", value: 1, color: "#1f2937" }]),
+    [total, data]
+  );
 
   return (
     <div className="panel severity-panel">
@@ -64,4 +71,6 @@ export default function SeverityChart({ severityBreakdown, statsData }) {
       </div>
     </div>
   );
-}
+});
+
+export default SeverityChart;

@@ -1,24 +1,27 @@
+import { memo, useMemo } from "react";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 
-export default function TrendChart({ recentIncidents = [] }) {
-  const daysInMonth = Array.from({ length: 30 }, (_, i) => ({
-    day: String(i + 1).padStart(2, "0"),
-    value: 0,
-  }));
+const TrendChart = memo(function TrendChart({ recentIncidents = [] }) {
+  const chartData = useMemo(() => {
+    const daysInMonth = Array.from({ length: 30 }, (_, i) => ({
+      day: String(i + 1).padStart(2, "0"),
+      value: 0,
+    }));
 
-  if (Array.isArray(recentIncidents) && recentIncidents.length > 0) {
-    recentIncidents.forEach((incident) => {
-      const incomingDate = incident.createdAt || incident.acquisitionDate;
-      if (!incomingDate) return;
+    if (Array.isArray(recentIncidents) && recentIncidents.length > 0) {
+      recentIncidents.forEach((incident) => {
+        const incomingDate = incident.createdAt || incident.acquisitionDate;
+        if (!incomingDate) return;
 
-      const dateObj = new Date(incomingDate);
-      const day = String(dateObj.getDate()).padStart(2, "0");
-      const found = daysInMonth.find((entry) => entry.day === day);
-      if (found) found.value += 1;
-    });
-  }
+        const dateObj = new Date(incomingDate);
+        const day = String(dateObj.getDate()).padStart(2, "0");
+        const found = daysInMonth.find((entry) => entry.day === day);
+        if (found) found.value += 1;
+      });
+    }
 
-  const chartData = daysInMonth;
+    return daysInMonth;
+  }, [recentIncidents]);
 
   return (
     <div className="panel trend-panel">
@@ -46,4 +49,6 @@ export default function TrendChart({ recentIncidents = [] }) {
       </div>
     </div>
   );
-}
+});
+
+export default TrendChart;

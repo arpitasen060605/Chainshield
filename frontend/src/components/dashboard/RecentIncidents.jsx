@@ -1,7 +1,8 @@
+import { memo } from "react";
 import { Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-export default function RecentIncidents({ recentIncidents = [] }) {
+const RecentIncidents = memo(function RecentIncidents({ recentIncidents = [] }) {
   const navigate = useNavigate();
 
   return (
@@ -77,4 +78,6 @@ export default function RecentIncidents({ recentIncidents = [] }) {
       </div>
     </div>
   );
-}
+});
+
+export default RecentIncidents;

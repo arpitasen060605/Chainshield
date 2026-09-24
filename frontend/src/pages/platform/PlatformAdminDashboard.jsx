@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Layout from '../../components/layout/Layout';
 import {
   getPlatformStats,
@@ -149,40 +149,43 @@ export default function PlatformAdminDashboard() {
   const inactiveCompanyAdmins = stats?.inactiveCompanyAdmins ?? 0;
   const pendingCompanyAdmins = stats?.pendingCompanyAdmins ?? 0;
 
-  const statCards = [
-    {
-      title: 'Total Companies',
-      value: totalCompanies,
-      icon: Building2,
-      color: 'text-blue-400',
-      bgColor: 'bg-blue-500/10',
-      borderColor: 'border-blue-500/20',
-    },
-    {
-      title: 'Active Company Admins',
-      value: activeCompanyAdmins,
-      icon: UserCheck,
-      color: 'text-emerald-400',
-      bgColor: 'bg-emerald-500/10',
-      borderColor: 'border-emerald-500/20',
-    },
-    {
-      title: 'Inactive Company Admins',
-      value: inactiveCompanyAdmins,
-      icon: UserX,
-      color: 'text-slate-400',
-      bgColor: 'bg-slate-500/10',
-      borderColor: 'border-slate-500/20',
-    },
-    {
-      title: 'Pending Company Admins',
-      value: pendingCompanyAdmins,
-      icon: UserPlus,
-      color: 'text-amber-400',
-      bgColor: 'bg-amber-500/10',
-      borderColor: 'border-amber-500/20',
-    },
-  ];
+  const statCards = useMemo(
+    () => [
+      {
+        title: 'Total Companies',
+        value: totalCompanies,
+        icon: Building2,
+        color: 'text-blue-400',
+        bgColor: 'bg-blue-500/10',
+        borderColor: 'border-blue-500/20',
+      },
+      {
+        title: 'Active Company Admins',
+        value: activeCompanyAdmins,
+        icon: UserCheck,
+        color: 'text-emerald-400',
+        bgColor: 'bg-emerald-500/10',
+        borderColor: 'border-emerald-500/20',
+      },
+      {
+        title: 'Inactive Company Admins',
+        value: inactiveCompanyAdmins,
+        icon: UserX,
+        color: 'text-slate-400',
+        bgColor: 'bg-slate-500/10',
+        borderColor: 'border-slate-500/20',
+      },
+      {
+        title: 'Pending Company Admins',
+        value: pendingCompanyAdmins,
+        icon: UserPlus,
+        color: 'text-amber-400',
+        bgColor: 'bg-amber-500/10',
+        borderColor: 'border-amber-500/20',
+      },
+    ],
+    [totalCompanies, activeCompanyAdmins, inactiveCompanyAdmins, pendingCompanyAdmins]
+  );
 
   const getStatusBadge = (status) => {
     const s = String(status || '').toLowerCase();

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import {
   login as apiLogin,
   register as apiRegister,
@@ -42,51 +42,54 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Handle Login
-  const login = async (credentials) => {
+  const login = useCallback(async (credentials) => {
     const data = await apiLogin(credentials);
     if (data && data.user) {
       setUser(data.user);
     }
     return data;
-  };
+  }, []);
 
   // Handle Registration
-  const register = async (userData) => {
+  const register = useCallback(async (userData) => {
     const data = await apiRegister(userData);
     if (data && data.user && !data.pending) {
       setUser(data.user);
     }
     return data;
-  };
+  }, []);
 
   // Handle Profile Update
-  const updateProfile = async (profileData) => {
+  const updateProfile = useCallback(async (profileData) => {
     const data = await apiUpdateProfile(profileData);
     if (data && data.user) {
       setUser(data.user);
     }
     return data;
-  };
+  }, []);
 
   // Handle Logout
-  const logout = () => {
+  const logout = useCallback(() => {
     apiLogout();
     setUser(null);
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      user,
+      loading,
+      isAuthenticated: !!user && !!localStorage.getItem('chainshield_token'),
+      login,
+      register,
+      updateProfile,
+      logout,
+      setUser,
+    }),
+    [user, loading, login, register, updateProfile, logout, setUser]
+  );
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        isAuthenticated: !!user && !!localStorage.getItem('chainshield_token'),
-        login,
-        register,
-        updateProfile,
-        logout,
-        setUser,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
@@ -101,3 +104,4 @@ export const useAuth = () => {
 };
 
 export default AuthContext;
+

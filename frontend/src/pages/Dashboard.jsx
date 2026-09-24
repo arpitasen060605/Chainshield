@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { CalendarDays, ChevronDown, ShieldAlert, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/layout/Layout";
@@ -61,15 +61,18 @@ export default function Dashboard() {
   const verifiedEvidence = statsData?.verifiedEvidence ?? 0;
   const pendingVerification = statsData?.pendingVerification ?? 0;
 
-  const dashboardStats = [
-    { title: "Total incidents", value: String(totalIncidents), meta: "Live feed", tone: "purple", icon: "file" },
-    { title: "Open incidents", value: String(openIncidents), meta: "Active", tone: "red", icon: "shield" },
-    { title: "Critical", value: String(criticalIncidents), meta: "Urgent", tone: "red", icon: "alert" },
-    { title: "Closed", value: String(closedIncidents), meta: "Resolved", tone: "green", icon: "checkCircle" },
-    { title: "Evidence", value: String(totalEvidence), meta: "Vault", tone: "blue", icon: "folder" },
-    { title: "Verified", value: String(verifiedEvidence), meta: "Integrity", tone: "green", icon: "check" },
-    { title: "Pending", value: String(pendingVerification), meta: "Needs review", tone: "purple", icon: "clock" },
-  ];
+  const dashboardStats = useMemo(
+    () => [
+      { title: "Total incidents", value: String(totalIncidents), meta: "Live feed", tone: "purple", icon: "file" },
+      { title: "Open incidents", value: String(openIncidents), meta: "Active", tone: "red", icon: "shield" },
+      { title: "Critical", value: String(criticalIncidents), meta: "Urgent", tone: "red", icon: "alert" },
+      { title: "Closed", value: String(closedIncidents), meta: "Resolved", tone: "green", icon: "checkCircle" },
+      { title: "Evidence", value: String(totalEvidence), meta: "Vault", tone: "blue", icon: "folder" },
+      { title: "Verified", value: String(verifiedEvidence), meta: "Integrity", tone: "green", icon: "check" },
+      { title: "Pending", value: String(pendingVerification), meta: "Needs review", tone: "purple", icon: "clock" },
+    ],
+    [totalIncidents, openIncidents, criticalIncidents, closedIncidents, totalEvidence, verifiedEvidence, pendingVerification]
+  );
 
   const hasNoData = !loading && !error && totalIncidents === 0 && totalEvidence === 0;
 
