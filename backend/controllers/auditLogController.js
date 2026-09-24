@@ -1,6 +1,19 @@
 import AuditLog from '../models/AuditLog.js';
+import User from '../models/User.js';
 
 const SAFE_USER_FIELDS = 'name email role status department title avatar';
+
+const getAuditLogCompanyFilter = async (req) => {
+  if (req.user?.role === 'platform_admin') return {};
+  const companyId = req.user.companyId;
+  const companyUserIds = await User.find({ companyId }).distinct('_id');
+  return {
+    $or: [
+      { companyId },
+      { user: { $in: companyUserIds } },
+    ],
+  };
+};
 
 /**
  * @desc    Get audit logs stream (Filterable & Paginated)
@@ -11,7 +24,8 @@ export const getAuditLogs = async (req, res, next) => {
   try {
     const { action, user, resourceType, search, limit = 100, page = 1 } = req.query;
 
-    const query = {};
+    const companyFilter = await getAuditLogCompanyFilter(req);
+    const query = { ...companyFilter };
 
     if (action && action !== 'All') {
       const sanitized = String(action).trim().replace(/[\s_]+/g, '.*');

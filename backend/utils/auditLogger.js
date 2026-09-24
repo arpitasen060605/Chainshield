@@ -45,9 +45,16 @@ export const createAuditLog = async ({
 
     const userAgent = req ? req.headers['user-agent'] || '' : '';
 
+    const companyId = user && user.companyId
+      ? user.companyId
+      : req && req.user && req.user.companyId
+      ? req.user.companyId
+      : null;
+
     await AuditLog.create({
       action: String(action).toUpperCase().trim(),
       user: userId,
+      companyId,
       userName,
       userEmail,
       resourceType,

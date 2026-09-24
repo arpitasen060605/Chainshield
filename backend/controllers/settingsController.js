@@ -28,11 +28,13 @@ const DEFAULT_SETTINGS = {
  */
 export const getSettings = async (req, res, next) => {
   try {
-    let settings = await Settings.findOne().populate('updatedBy', SAFE_USER_FIELDS);
+    const companyFilter = req.user?.role === 'platform_admin' ? {} : { companyId: req.user.companyId };
+    let settings = await Settings.findOne(companyFilter).populate('updatedBy', SAFE_USER_FIELDS);
 
     if (!settings) {
       settings = new Settings({
         ...DEFAULT_SETTINGS,
+        companyId: req.user?.companyId,
         updatedBy: req.user ? (req.user._id || req.user.id) : null,
       });
       await settings.save();
@@ -71,9 +73,13 @@ export const updateSettings = async (req, res, next) => {
       });
     }
 
-    let settings = await Settings.findOne();
+    const companyFilter = req.user?.role === 'platform_admin' ? {} : { companyId: req.user.companyId };
+    let settings = await Settings.findOne(companyFilter);
     if (!settings) {
-      settings = new Settings({ ...DEFAULT_SETTINGS });
+      settings = new Settings({
+        ...DEFAULT_SETTINGS,
+        companyId: req.user?.companyId,
+      });
     }
 
     const { notifications, department, timezone, language, nodeSettings } = req.body;

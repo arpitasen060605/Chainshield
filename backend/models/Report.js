@@ -15,6 +15,11 @@ const reportSchema = new mongoose.Schema(
       required: [true, 'Incident reference is required'],
       index: true,
     },
+    companyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Company',
+      index: true,
+    },
     title: {
       type: String,
       required: [true, 'Report title is required'],

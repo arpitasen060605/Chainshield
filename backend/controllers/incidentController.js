@@ -36,9 +36,10 @@ const generateUniqueIncidentId = async () => {
  * Helper to check if a user is authorized to view or access an incident
  */
 const canUserAccessIncident = (user, incident) => {
-  if (incident.companyId && String(incident.companyId) !== String(user.companyId)) return false;
   if (!user || !incident) return false;
   const userRole = (user.role || '').toLowerCase();
+  if (userRole === 'platform_admin') return true;
+  if (incident.companyId && String(incident.companyId) !== String(user.companyId)) return false;
   const userIdStr = (user._id || user.id).toString();
 
   // Admins and Lead Investigators can access all incidents
@@ -180,6 +181,9 @@ export const getAllIncidents = async (req, res, next) => {
     const userId = req.user._id || req.user.id;
 
     const query = {};
+    if (userRole !== 'platform_admin') {
+      query.companyId = req.user.companyId;
+    }
 
     // 1. Severity filter validation & query
     if (severity && severity !== 'All') {
@@ -281,6 +285,9 @@ export const getIncidentById = async (req, res, next) => {
     const findQuery = mongoose.Types.ObjectId.isValid(id)
       ? { _id: id }
       : { incidentId: id.toUpperCase() };
+    if (req.user?.role !== 'platform_admin') {
+      findQuery.companyId = req.user.companyId;
+    }
 
     const incident = await Incident.findOne(findQuery)
       .populate('createdBy', SAFE_USER_FIELDS)
@@ -323,6 +330,9 @@ export const updateIncident = async (req, res, next) => {
     const findQuery = mongoose.Types.ObjectId.isValid(id)
       ? { _id: id }
       : { incidentId: id.toUpperCase() };
+    if (req.user?.role !== 'platform_admin') {
+      findQuery.companyId = req.user.companyId;
+    }
 
     const incident = await Incident.findOne(findQuery);
 
@@ -436,6 +446,9 @@ export const updateIncidentStatus = async (req, res, next) => {
     const findQuery = mongoose.Types.ObjectId.isValid(id)
       ? { _id: id }
       : { incidentId: id.toUpperCase() };
+    if (req.user?.role !== 'platform_admin') {
+      findQuery.companyId = req.user.companyId;
+    }
 
     const incident = await Incident.findOne(findQuery);
 
@@ -521,6 +534,9 @@ export const assignIncidentPersonnel = async (req, res, next) => {
     const findQuery = mongoose.Types.ObjectId.isValid(id)
       ? { _id: id }
       : { incidentId: id.toUpperCase() };
+    if (req.user?.role !== 'platform_admin') {
+      findQuery.companyId = req.user.companyId;
+    }
 
     const incident = await Incident.findOne(findQuery);
 

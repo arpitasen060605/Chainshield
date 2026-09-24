@@ -85,6 +85,21 @@ const generateUniqueEvidenceId = async () => {
 };
 
 /**
+ * Helper to build company-isolated query filter for Evidence
+ */
+const getEvidenceCompanyFilter = async (req) => {
+  if (req.user?.role === 'platform_admin') return {};
+  const companyId = req.user.companyId;
+  const companyIncidentIds = await Incident.find({ companyId }).distinct('_id');
+  return {
+    $or: [
+      { companyId },
+      { incidentId: { $in: companyIncidentIds } },
+    ],
+  };
+};
+
+/**
  * @desc    Upload & ingest a new digital evidence artifact
  * @route   POST /api/evidence
  * @access  Private
@@ -112,6 +127,9 @@ export const createEvidence = async (req, res, next) => {
     const findIncidentQuery = mongoose.Types.ObjectId.isValid(incidentId)
       ? { _id: incidentId }
       : { incidentId: String(incidentId).toUpperCase() };
+    if (req.user?.role !== 'platform_admin') {
+      findIncidentQuery.companyId = req.user.companyId;
+    }
 
     const parentIncident = await Incident.findOne(findIncidentQuery);
 
@@ -175,6 +193,7 @@ export const createEvidence = async (req, res, next) => {
     const evidence = new Evidence({
       evidenceId,
       incidentId: parentIncident._id,
+      companyId: parentIncident.companyId || req.user.companyId,
       name: name ? name.trim() : req.file.originalname,
       description: description ? description.trim() : '',
       evidenceType: ALLOWED_EVIDENCE_TYPES.includes(normType) ? normType : 'other',
@@ -266,7 +285,8 @@ export const createEvidence = async (req, res, next) => {
 export const getAllEvidence = async (req, res, next) => {
   try {
     const { incidentId, evidenceType, status, search, page = 1, limit = 20 } = req.query;
-    const query = {};
+    const companyFilter = await getEvidenceCompanyFilter(req);
+    const query = { ...companyFilter };
 
     // 1. Parent Incident Filter
     if (incidentId && incidentId !== 'All') {
@@ -361,10 +381,11 @@ export const getAllEvidence = async (req, res, next) => {
 export const getEvidenceById = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const companyFilter = await getEvidenceCompanyFilter(req);
 
     const findQuery = mongoose.Types.ObjectId.isValid(id)
-      ? { _id: id }
-      : { evidenceId: String(id).toUpperCase() };
+      ? { _id: id, ...companyFilter }
+      : { evidenceId: String(id).toUpperCase(), ...companyFilter };
 
     const evidence = await Evidence.findOne(findQuery)
       .populate('incidentId', SAFE_INCIDENT_FIELDS)
@@ -396,10 +417,11 @@ export const getEvidenceById = async (req, res, next) => {
 export const downloadEvidenceFile = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const companyFilter = await getEvidenceCompanyFilter(req);
 
     const findQuery = mongoose.Types.ObjectId.isValid(id)
-      ? { _id: id }
-      : { evidenceId: String(id).toUpperCase() };
+      ? { _id: id, ...companyFilter }
+      : { evidenceId: String(id).toUpperCase(), ...companyFilter };
 
     const evidence = await Evidence.findOne(findQuery).populate('incidentId');
 
@@ -501,9 +523,10 @@ const ensureInitialCustodyHistory = (evidence) => {
 export const getCustodyHistory = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const companyFilter = await getEvidenceCompanyFilter(req);
     const findQuery = mongoose.Types.ObjectId.isValid(id)
-      ? { _id: id }
-      : { evidenceId: String(id).toUpperCase() };
+      ? { _id: id, ...companyFilter }
+      : { evidenceId: String(id).toUpperCase(), ...companyFilter };
 
     const evidence = await Evidence.findOne(findQuery)
       .populate('collectedBy', SAFE_USER_FIELDS)
@@ -562,9 +585,10 @@ export const transferCustody = async (req, res, next) => {
     }
 
     // 1. Verify evidence artifact exists
+    const companyFilter = await getEvidenceCompanyFilter(req);
     const findEvidenceQuery = mongoose.Types.ObjectId.isValid(id)
-      ? { _id: id }
-      : { evidenceId: String(id).toUpperCase() };
+      ? { _id: id, ...companyFilter }
+      : { evidenceId: String(id).toUpperCase(), ...companyFilter };
 
     const evidence = await Evidence.findOne(findEvidenceQuery);
 
@@ -581,6 +605,9 @@ export const transferCustody = async (req, res, next) => {
       targetUserQuery = { _id: targetUserIdentifier };
     } else {
       targetUserQuery = { email: String(targetUserIdentifier).toLowerCase().trim() };
+    }
+    if (req.user?.role !== 'platform_admin') {
+      targetUserQuery.companyId = req.user.companyId;
     }
 
     const User = mongoose.model('User');
@@ -662,10 +689,11 @@ export const transferCustody = async (req, res, next) => {
 export const verifyEvidence = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const companyFilter = await getEvidenceCompanyFilter(req);
 
     const findQuery = mongoose.Types.ObjectId.isValid(id)
-      ? { _id: id }
-      : { evidenceId: String(id).toUpperCase() };
+      ? { _id: id, ...companyFilter }
+      : { evidenceId: String(id).toUpperCase(), ...companyFilter };
 
     const evidence = await Evidence.findOne(findQuery);
 
@@ -764,10 +792,11 @@ export const verifyEvidence = async (req, res, next) => {
 export const getVerificationHistory = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const companyFilter = await getEvidenceCompanyFilter(req);
 
     const findQuery = mongoose.Types.ObjectId.isValid(id)
-      ? { _id: id }
-      : { evidenceId: String(id).toUpperCase() };
+      ? { _id: id, ...companyFilter }
+      : { evidenceId: String(id).toUpperCase(), ...companyFilter };
 
     const evidence = await Evidence.findOne(findQuery)
       .populate('incidentId', SAFE_INCIDENT_FIELDS)
@@ -817,8 +846,10 @@ export const getVerificationHistory = async (req, res, next) => {
 export const getAllVerifications = async (req, res, next) => {
   try {
     const { result, search } = req.query;
+    const companyFilter = await getEvidenceCompanyFilter(req);
 
     const evidences = await Evidence.find({
+      ...companyFilter,
       'verificationHistory.0': { $exists: true },
     })
       .populate('incidentId', SAFE_INCIDENT_FIELDS)

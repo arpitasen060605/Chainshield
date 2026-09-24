@@ -99,6 +99,11 @@ const evidenceSchema = new mongoose.Schema(
       required: [true, 'Parent incident ID is required'],
       index: true,
     },
+    companyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Company',
+      index: true,
+    },
     name: {
       type: String,
       required: [true, 'Evidence name is required'],

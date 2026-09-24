@@ -32,9 +32,11 @@ const generateUniqueReportId = async () => {
 const canUserAccessIncident = (user, incident) => {
   if (!user || !incident) return false;
   const userRole = (user.role || '').toLowerCase();
+  if (userRole === 'platform_admin') return true;
+  if (incident.companyId && String(incident.companyId) !== String(user.companyId)) return false;
   const userIdStr = (user._id || user.id).toString();
 
-  if (['admin', 'lead_investigator'].includes(userRole)) {
+  if (['admin', 'company_admin', 'lead_investigator', 'forensic_analyst', 'auditor'].includes(userRole)) {
     return true;
   }
 
@@ -53,7 +55,7 @@ const canUserAccessIncident = (user, incident) => {
     return isCreator || isAssigned;
   }
 
-  return true;
+  return false;
 };
 
 /**
@@ -224,6 +226,9 @@ export const generateReport = async (req, res, next) => {
     const findQuery = mongoose.Types.ObjectId.isValid(incidentId)
       ? { _id: incidentId }
       : { incidentId: String(incidentId).toUpperCase() };
+    if (req.user?.role !== 'platform_admin') {
+      findQuery.companyId = req.user.companyId;
+    }
 
     const incident = await Incident.findOne(findQuery)
       .populate('createdBy', SAFE_USER_FIELDS)
@@ -251,6 +256,7 @@ export const generateReport = async (req, res, next) => {
     const report = new Report({
       reportId,
       incidentId: incident._id,
+      companyId: incident.companyId || req.user.companyId,
       title: title ? String(title).trim() : `Forensic Investigation Report - ${incident.incidentId}`,
       summary: summary ? String(summary).trim() : incident.description,
       executiveSummary: executiveSummary ? String(executiveSummary).trim() : '',
@@ -294,14 +300,15 @@ export const generateReport = async (req, res, next) => {
  */
 export const getAllReports = async (req, res, next) => {
   try {
-    let reports = await Report.find()
+    const companyFilter = req.user?.role === 'platform_admin' ? {} : { companyId: req.user.companyId };
+    let reports = await Report.find(companyFilter)
       .populate('incidentId', SAFE_INCIDENT_FIELDS)
       .populate('generatedBy', SAFE_USER_FIELDS)
       .sort({ createdAt: -1 });
 
     // If no report records exist yet in DB, synthesize reports for existing DB incidents
     if (reports.length === 0) {
-      const incidents = await Incident.find()
+      const incidents = await Incident.find(companyFilter)
         .populate('createdBy', SAFE_USER_FIELDS)
         .populate('assignedTo', SAFE_USER_FIELDS);
 
@@ -310,6 +317,7 @@ export const getAllReports = async (req, res, next) => {
         const rep = new Report({
           reportId,
           incidentId: inc._id,
+          companyId: inc.companyId || req.user.companyId,
           title: `Forensic Investigation Report - ${inc.incidentId}`,
           summary: inc.description,
           status: 'final',
@@ -318,7 +326,7 @@ export const getAllReports = async (req, res, next) => {
         await rep.save();
       }
 
-      reports = await Report.find()
+      reports = await Report.find(companyFilter)
         .populate('incidentId', SAFE_INCIDENT_FIELDS)
         .populate('generatedBy', SAFE_USER_FIELDS)
         .sort({ createdAt: -1 });
@@ -356,13 +364,14 @@ export const getAllReports = async (req, res, next) => {
 export const getReportById = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const companyFilter = req.user?.role === 'platform_admin' ? {} : { companyId: req.user.companyId };
 
     let findQuery;
     if (mongoose.Types.ObjectId.isValid(id)) {
-      findQuery = { $or: [{ _id: id }, { incidentId: id }] };
+      findQuery = { $or: [{ _id: id }, { incidentId: id }], ...companyFilter };
     } else {
       const formatted = String(id).toUpperCase();
-      findQuery = { $or: [{ reportId: formatted }, { title: new RegExp(formatted, 'i') }] };
+      findQuery = { $or: [{ reportId: formatted }, { title: new RegExp(formatted, 'i') }], ...companyFilter };
     }
 
     let report = await Report.findOne(findQuery)
@@ -372,8 +381,8 @@ export const getReportById = async (req, res, next) => {
     // If report not found by reportId, try finding incident directly and building/saving a report
     if (!report) {
       const incFindQuery = mongoose.Types.ObjectId.isValid(id)
-        ? { _id: id }
-        : { incidentId: String(id).toUpperCase() };
+        ? { _id: id, ...companyFilter }
+        : { incidentId: String(id).toUpperCase(), ...companyFilter };
 
       const incident = await Incident.findOne(incFindQuery)
         .populate('createdBy', SAFE_USER_FIELDS)
@@ -384,6 +393,7 @@ export const getReportById = async (req, res, next) => {
         report = new Report({
           reportId,
           incidentId: incident._id,
+          companyId: incident.companyId || req.user.companyId,
           title: `Forensic Investigation Report - ${incident.incidentId}`,
           summary: incident.description,
           status: 'final',

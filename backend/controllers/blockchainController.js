@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Evidence from '../models/Evidence.js';
+import Incident from '../models/Incident.js';
 import {
   storeEvidenceHash,
   getEvidenceHash,
@@ -10,6 +11,18 @@ import { createAuditLog } from '../utils/auditLogger.js';
 
 const SAFE_USER_FIELDS = 'name email role status';
 
+const getEvidenceCompanyFilter = async (req) => {
+  if (req.user?.role === 'platform_admin') return {};
+  const companyId = req.user.companyId;
+  const companyIncidentIds = await Incident.find({ companyId }).distinct('_id');
+  return {
+    $or: [
+      { companyId },
+      { incidentId: { $in: companyIncidentIds } },
+    ],
+  };
+};
+
 /**
  * @desc    Register evidence SHA-256 hash on immutable blockchain smart contract
  * @route   POST /api/blockchain/evidence/:id/register
@@ -18,10 +31,11 @@ const SAFE_USER_FIELDS = 'name email role status';
 export const registerEvidenceProof = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const companyFilter = await getEvidenceCompanyFilter(req);
 
     const findQuery = mongoose.Types.ObjectId.isValid(id)
-      ? { _id: id }
-      : { evidenceId: String(id).toUpperCase() };
+      ? { _id: id, ...companyFilter }
+      : { evidenceId: String(id).toUpperCase(), ...companyFilter };
 
     const evidence = await Evidence.findOne(findQuery);
 
@@ -92,10 +106,11 @@ export const registerEvidenceProof = async (req, res, next) => {
 export const getEvidenceBlockchainProof = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const companyFilter = await getEvidenceCompanyFilter(req);
 
     const findQuery = mongoose.Types.ObjectId.isValid(id)
-      ? { _id: id }
-      : { evidenceId: String(id).toUpperCase() };
+      ? { _id: id, ...companyFilter }
+      : { evidenceId: String(id).toUpperCase(), ...companyFilter };
 
     const evidence = await Evidence.findOne(findQuery)
       .populate('collectedBy', SAFE_USER_FIELDS)
@@ -132,10 +147,11 @@ export const getEvidenceBlockchainProof = async (req, res, next) => {
 export const verifyEvidenceOnChainHandler = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const companyFilter = await getEvidenceCompanyFilter(req);
 
     const findQuery = mongoose.Types.ObjectId.isValid(id)
-      ? { _id: id }
-      : { evidenceId: String(id).toUpperCase() };
+      ? { _id: id, ...companyFilter }
+      : { evidenceId: String(id).toUpperCase(), ...companyFilter };
 
     const evidence = await Evidence.findOne(findQuery);
 

@@ -12,49 +12,80 @@ const SAFE_USER_FIELDS = 'name email role status department title avatar';
  */
 export const getDashboardStats = async (req, res, next) => {
   try {
+    const isPlatformAdmin = req.user?.role === 'platform_admin';
+    const companyId = req.user?.companyId;
+
+    const companyFilter = isPlatformAdmin ? {} : { companyId };
+
     // 1. Incident metrics
-    const totalIncidents = await Incident.countDocuments();
+    const totalIncidents = await Incident.countDocuments(companyFilter);
     const openIncidents = await Incident.countDocuments({
+      ...companyFilter,
       status: { $in: ['active', 'under_investigation', 'containment'] },
     });
     const closedIncidents = await Incident.countDocuments({
+      ...companyFilter,
       status: 'resolved',
     });
     const criticalIncidents = await Incident.countDocuments({
+      ...companyFilter,
       severity: 'critical',
     });
-    const highIncidents = await Incident.countDocuments({ severity: 'high' });
-    const mediumIncidents = await Incident.countDocuments({ severity: 'medium' });
-    const lowIncidents = await Incident.countDocuments({ severity: 'low' });
+    const highIncidents = await Incident.countDocuments({ ...companyFilter, severity: 'high' });
+    const mediumIncidents = await Incident.countDocuments({ ...companyFilter, severity: 'medium' });
+    const lowIncidents = await Incident.countDocuments({ ...companyFilter, severity: 'low' });
 
     // 2. Evidence & Verification metrics
-    const totalEvidence = await Evidence.countDocuments();
+    const companyIncidentIds = isPlatformAdmin ? [] : await Incident.find({ companyId }).distinct('_id');
+    const evidenceCompanyFilter = isPlatformAdmin
+      ? {}
+      : {
+          $or: [
+            { companyId },
+            { incidentId: { $in: companyIncidentIds } },
+          ],
+        };
+
+    const totalEvidence = await Evidence.countDocuments(evidenceCompanyFilter);
     const verifiedEvidenceCount = await Evidence.countDocuments({
+      ...evidenceCompanyFilter,
       'verificationHistory.result': 'VERIFIED',
     });
     const pendingVerificationCount = await Evidence.countDocuments({
+      ...evidenceCompanyFilter,
       $or: [
         { verificationHistory: { $exists: false } },
         { verificationHistory: { $size: 0 } },
       ],
     });
     const tamperedEvidenceCount = await Evidence.countDocuments({
+      ...evidenceCompanyFilter,
       'verificationHistory.result': 'TAMPERED',
     });
 
     // 3. User & System metrics
-    const totalUsers = await User.countDocuments();
-    const activeUsers = await User.countDocuments({ status: 'active' });
+    const totalUsers = await User.countDocuments(companyFilter);
+    const activeUsers = await User.countDocuments({ ...companyFilter, status: 'active' });
 
     // 4. Recent Incidents
-    const recentIncidents = await Incident.find()
+    const recentIncidents = await Incident.find(companyFilter)
       .populate('createdBy', SAFE_USER_FIELDS)
       .populate('assignedTo', SAFE_USER_FIELDS)
       .sort({ createdAt: -1 })
       .limit(5);
 
     // 5. Recent Audit Activity
-    const recentActivity = await AuditLog.find()
+    const companyUserIds = isPlatformAdmin ? [] : await User.find({ companyId }).distinct('_id');
+    const auditLogCompanyFilter = isPlatformAdmin
+      ? {}
+      : {
+          $or: [
+            { companyId },
+            { user: { $in: companyUserIds } },
+          ],
+        };
+
+    const recentActivity = await AuditLog.find(auditLogCompanyFilter)
       .populate('user', SAFE_USER_FIELDS)
       .sort({ timestamp: -1 })
       .limit(6);

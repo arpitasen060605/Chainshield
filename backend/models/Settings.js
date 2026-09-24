@@ -2,6 +2,11 @@ import mongoose from 'mongoose';
 
 const settingsSchema = new mongoose.Schema(
   {
+    companyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Company',
+      index: true,
+    },
     notifications: {
       criticalIncidentAlerts: { type: Boolean, default: true },
       evidenceTamperAlerts: { type: Boolean, default: true },
