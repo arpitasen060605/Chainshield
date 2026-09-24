@@ -53,6 +53,7 @@ const ForgotPassword = () => {
   // Handle Step 1: Send OTP
   const handleSendOtp = async (e) => {
     e?.preventDefault();
+    if (loading) return;
     if (!email || !email.trim()) {
       setError("Please enter your email address");
       return;
@@ -65,18 +66,18 @@ const ForgotPassword = () => {
     try {
       const res = await forgotPassword(email.trim());
       if (res && res.success) {
-        setInfoMessage(res.message || "If an account with that email exists, a 6-digit OTP code has been sent.");
+        setInfoMessage(res.message || "OTP sent successfully. Please check your email.");
         setStep(2);
         setCooldown(60); // 60 seconds cooldown for resend
       } else {
-        setError(res?.message || "Failed to send reset OTP code. Please try again.");
+        setError(res?.message || "Unable to send OTP right now. Please try again later.");
       }
     } catch (err) {
-      let msg = "Failed to send reset OTP code. Please try again.";
-      if (err.code === "ECONNABORTED" || err.message?.includes("timeout")) {
-        msg = "Email service request timed out. Please check SMTP configuration or try again.";
-      } else if (err.response?.data?.message) {
+      let msg = "Unable to send OTP right now. Please try again later.";
+      if (err.response?.data?.message) {
         msg = err.response.data.message;
+      } else if (err.code === "ECONNABORTED" || err.message?.includes("timeout")) {
+        msg = "Unable to send OTP right now. Please try again later.";
       } else if (err.message) {
         msg = err.message;
       }
@@ -96,19 +97,19 @@ const ForgotPassword = () => {
     try {
       const res = await forgotPassword(email.trim());
       if (res && res.success) {
-        setInfoMessage(res.message || "A new 6-digit OTP code has been sent to your email.");
+        setInfoMessage(res.message || "OTP sent successfully. Please check your email.");
         setOtp(["", "", "", "", "", ""]);
         setCooldown(60);
         otpInputsRef.current[0]?.focus();
       } else {
-        setError(res?.message || "Failed to resend OTP. Please try again.");
+        setError(res?.message || "Unable to send OTP right now. Please try again later.");
       }
     } catch (err) {
-      let msg = "Failed to resend OTP. Please try again.";
-      if (err.code === "ECONNABORTED" || err.message?.includes("timeout")) {
-        msg = "Email service request timed out. Please check SMTP configuration or try again.";
-      } else if (err.response?.data?.message) {
+      let msg = "Unable to send OTP right now. Please try again later.";
+      if (err.response?.data?.message) {
         msg = err.response.data.message;
+      } else if (err.code === "ECONNABORTED" || err.message?.includes("timeout")) {
+        msg = "Unable to send OTP right now. Please try again later.";
       } else if (err.message) {
         msg = err.message;
       }

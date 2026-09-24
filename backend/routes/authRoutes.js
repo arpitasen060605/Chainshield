@@ -12,7 +12,7 @@ router.post('/register', registerUser);
 router.post('/login', authRateLimiter({ max: 20 }), loginUser);
 
 // POST /api/auth/forgot-password (Rate-limited)
-router.post('/forgot-password', authRateLimiter({ max: 10 }), forgotPassword);
+router.post('/forgot-password', authRateLimiter({ max: 10, message: 'Too many OTP requests. Please wait a few minutes and try again.' }), forgotPassword);
 
 // POST /api/auth/verify-reset-otp (Rate-limited)
 router.post('/verify-reset-otp', authRateLimiter({ max: 15 }), verifyResetOtp);

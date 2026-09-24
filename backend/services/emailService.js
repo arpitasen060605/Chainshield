@@ -1,28 +1,43 @@
 import nodemailer from 'nodemailer';
 
+let cachedTransporter = null;
+let cachedConfigKey = null;
+
 const getTransporter = () => {
   const host = process.env.BREVO_SMTP_HOST || process.env.SMTP_HOST || 'smtp-relay.brevo.com';
   const port = parseInt(process.env.BREVO_SMTP_PORT || process.env.SMTP_PORT || '587', 10);
-  const user = process.env.BREVO_SMTP_USER || process.env.SMTP_USER || process.env.SMTP_USERNAME;
-  const pass = process.env.BREVO_SMTP_KEY || process.env.BREVO_SMTP_PASS || process.env.SMTP_PASS || process.env.SMTP_PASSWORD;
+  const user = process.env.BREVO_SMTP_USER || process.env.SMTP_USER || process.env.SMTP_USERNAME || process.env.EMAIL_USER;
+  const pass = process.env.BREVO_SMTP_KEY || process.env.BREVO_SMTP_PASS || process.env.SMTP_PASS || process.env.SMTP_PASSWORD || process.env.EMAIL_PASS;
 
-  if (!user || !pass) {
-    console.warn('[EMAIL WARNING] Missing SMTP user or password/key in environment variables.');
+  const currentConfigKey = `${host}:${port}:${user}:${pass}`;
+
+  if (cachedTransporter && cachedConfigKey === currentConfigKey) {
+    return cachedTransporter;
   }
 
-  return nodemailer.createTransport({
+  const isSecure = port === 465;
+
+  cachedTransporter = nodemailer.createTransport({
     host,
     port,
-    secure: port === 465, // true for 465 (SSL/TLS), false for 587 (STARTTLS)
+    secure: isSecure,
+    requireTLS: !isSecure,
     auth: {
       user,
       pass,
     },
-    // Set socket & connection timeouts to prevent endless hanging
-    connectionTimeout: 10000, // 10 seconds
-    greetingTimeout: 10000,   // 10 seconds
-    socketTimeout: 15000,     // 15 seconds
+    // Fast socket & connection timeouts to fail quickly on network/SMTP issues
+    connectionTimeout: 8000, // 8 seconds
+    greetingTimeout: 8000,   // 8 seconds
+    socketTimeout: 10000,    // 10 seconds
+    dnsTimeout: 5000,        // 5 seconds
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 100,
   });
+
+  cachedConfigKey = currentConfigKey;
+  return cachedTransporter;
 };
 
 /**
@@ -32,9 +47,9 @@ const getTransporter = () => {
 export const sendOtpEmail = async ({ toEmail, otp }) => {
   const host = process.env.BREVO_SMTP_HOST || process.env.SMTP_HOST || 'smtp-relay.brevo.com';
   const port = parseInt(process.env.BREVO_SMTP_PORT || process.env.SMTP_PORT || '587', 10);
-  const user = process.env.BREVO_SMTP_USER || process.env.SMTP_USER || process.env.SMTP_USERNAME;
-  const pass = process.env.BREVO_SMTP_KEY || process.env.BREVO_SMTP_PASS || process.env.SMTP_PASS || process.env.SMTP_PASSWORD;
-  const rawFrom = process.env.BREVO_FROM_EMAIL || process.env.SMTP_FROM || process.env.FROM_EMAIL || user;
+  const user = process.env.BREVO_SMTP_USER || process.env.SMTP_USER || process.env.SMTP_USERNAME || process.env.EMAIL_USER;
+  const pass = process.env.BREVO_SMTP_KEY || process.env.BREVO_SMTP_PASS || process.env.SMTP_PASS || process.env.SMTP_PASSWORD || process.env.EMAIL_PASS;
+  const rawFrom = process.env.BREVO_FROM_EMAIL || process.env.SMTP_FROM || process.env.FROM_EMAIL || process.env.EMAIL_FROM || user;
 
   console.log(`[EMAIL] Email send started for recipient: ${toEmail} | Host: ${host}:${port} | User Configured: ${Boolean(user)} | Key Configured: ${Boolean(pass)} | From Configured: ${Boolean(rawFrom)}`);
 
@@ -121,7 +136,10 @@ export const sendOtpEmail = async ({ toEmail, otp }) => {
     return info;
   } catch (sendErr) {
     console.error('[EMAIL] OTP send: FAILED');
-    console.error('[EMAIL] Error code/message:', sendErr.message || sendErr.code || sendErr);
+    console.error('[EMAIL] Error details:', sendErr.message || sendErr.code || sendErr);
+    // Invalidate cached transporter on failure so next request resets pool
+    cachedTransporter = null;
+    cachedConfigKey = null;
     throw sendErr;
   }
 };

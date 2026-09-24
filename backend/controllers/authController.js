@@ -119,15 +119,15 @@ export const forgotPassword = async (req, res, next) => {
     const normalizedEmail = email.trim().toLowerCase();
     console.log(`[AUTH] Forgot password OTP generation started for: ${normalizedEmail}`);
 
-    const genericResponse = {
+    const genericSuccessResponse = {
       success: true,
-      message: 'If an account with that email exists, a 6-digit OTP code has been sent.',
+      message: 'OTP sent successfully. Please check your email.',
     };
 
     const user = await User.findOne({ email: normalizedEmail }).select('+resetPasswordOtpHash +resetPasswordOtpExpires +resetPasswordOtpAttempts +resetPasswordOtpLastSent');
     if (!user) {
-      console.log(`[AUTH] No user found for ${normalizedEmail}, returning standard response`);
-      return res.json(genericResponse);
+      console.log(`[AUTH] No user found for ${normalizedEmail}, returning standard success response`);
+      return res.json(genericSuccessResponse);
     }
 
     if (user.resetPasswordOtpLastSent) {
@@ -145,6 +145,11 @@ export const forgotPassword = async (req, res, next) => {
     const otp = crypto.randomInt(100000, 1000000).toString();
     const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
 
+    // Preserve previous state in case sending email fails
+    const previousOtpHash = user.resetPasswordOtpHash;
+    const previousOtpExpires = user.resetPasswordOtpExpires;
+    const previousOtpLastSent = user.resetPasswordOtpLastSent;
+
     user.resetPasswordOtpHash = otpHash;
     user.resetPasswordOtpExpires = new Date(Date.now() + 10 * 60 * 1000);
     user.resetPasswordOtpAttempts = 0;
@@ -155,19 +160,23 @@ export const forgotPassword = async (req, res, next) => {
     await user.save();
     console.log(`[AUTH] OTP hashed and stored in DB for ${normalizedEmail}`);
 
-    // Send OTP email - if email fails, report the error back to user
+    // Send OTP email - if email fails, revert DB state so user is not locked out
     try {
       console.log(`[AUTH] Email send started for ${normalizedEmail}`);
       await sendOtpEmail({ toEmail: user.email, otp });
       console.log(`[AUTH] Email send succeeded for ${normalizedEmail}`);
     } catch (emailErr) {
       console.error(`[AUTH] Email send failed for ${normalizedEmail}:`, emailErr.message);
-      const safeErrorMessage = emailErr.message && !emailErr.message.includes('key') && !emailErr.message.includes('pass')
-        ? `Failed to send OTP email: ${emailErr.message}`
-        : 'Failed to send OTP email due to server email service error. Please try again later.';
+
+      // Revert OTP and cooldown fields so user is not incorrectly rate-limited after failure
+      user.resetPasswordOtpHash = previousOtpHash;
+      user.resetPasswordOtpExpires = previousOtpExpires;
+      user.resetPasswordOtpLastSent = previousOtpLastSent;
+      await user.save();
+
       return res.status(500).json({
         success: false,
-        message: safeErrorMessage,
+        message: 'Unable to send OTP right now. Please try again later.',
       });
     }
 
@@ -181,7 +190,7 @@ export const forgotPassword = async (req, res, next) => {
     });
 
     console.log(`[AUTH] Forgot password API request completed for ${normalizedEmail}`);
-    return res.json(genericResponse);
+    return res.json(genericSuccessResponse);
   } catch (e) {
     next(e);
   }

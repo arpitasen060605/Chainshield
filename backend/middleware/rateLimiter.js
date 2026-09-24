@@ -11,8 +11,21 @@ export const authRateLimiter = (options = {}) => {
   const message = options.message || 'Too many login attempts from this IP, please try again after 15 minutes';
 
   return (req, res, next) => {
-    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+    let rawIp = req.headers['x-forwarded-for'] || req.ip || req.socket?.remoteAddress || '127.0.0.1';
+    if (typeof rawIp === 'string' && rawIp.includes(',')) {
+      rawIp = rawIp.split(',')[0].trim();
+    }
+    const ip = String(rawIp).trim();
     const now = Date.now();
+
+    // Periodic cleanup of expired entries to keep memory clean
+    if (rateLimitMap.size > 500) {
+      for (const [key, value] of rateLimitMap.entries()) {
+        if (now > value.resetTime) {
+          rateLimitMap.delete(key);
+        }
+      }
+    }
 
     const record = rateLimitMap.get(ip) || { count: 0, resetTime: now + windowMs };
 
