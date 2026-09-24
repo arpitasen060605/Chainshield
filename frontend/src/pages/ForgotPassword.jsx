@@ -489,10 +489,6 @@ const ForgotPassword = () => {
                       New Password
                     </label>
                     <div className="relative">
-                      <Lock
-                        size={18}
-                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
-                      />
                       <input
                         type={showNewPassword ? "text" : "password"}
                         value={newPassword}
@@ -523,10 +519,6 @@ const ForgotPassword = () => {
                       Confirm New Password
                     </label>
                     <div className="relative">
-                      <Lock
-                        size={18}
-                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
-                      />
                       <input
                         type={showConfirmPassword ? "text" : "password"}
                         value={confirmPassword}

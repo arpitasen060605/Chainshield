@@ -27,7 +27,8 @@ export default function PlatformAdminDashboard() {
   const [companies, setCompanies] = useState([]);
   const [pendingAdmins, setPendingAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [updatingId, setUpdatingId] = useState(null);
+  const [approvingAdminId, setApprovingAdminId] = useState(null);
+  const [rejectingAdminId, setRejectingAdminId] = useState(null);
   const [error, setError] = useState('');
   const [toast, setToast] = useState(null);
 
@@ -67,12 +68,18 @@ export default function PlatformAdminDashboard() {
   };
 
   const handleUpdateStatus = async (adminId, name, newStatus, companyCode, companyId) => {
+    const isApproving = newStatus === 'active';
+    if (isApproving) {
+      setApprovingAdminId(adminId);
+    } else {
+      setRejectingAdminId(adminId);
+    }
+
     try {
-      setUpdatingId(adminId);
       const res = await updateCompanyAdminStatus(adminId, newStatus);
       if (res.success) {
         showToast(
-          newStatus === 'active'
+          isApproving
             ? `Company Admin ${name} approved successfully.`
             : `Company Admin ${name} updated to ${newStatus}.`,
           'success'
@@ -128,7 +135,8 @@ export default function PlatformAdminDashboard() {
       const msg = err.response?.data?.message || `Failed to update ${name}.`;
       showToast(msg, 'error');
     } finally {
-      setUpdatingId(null);
+      setApprovingAdminId(null);
+      setRejectingAdminId(null);
     }
   };
 
@@ -341,7 +349,9 @@ export default function PlatformAdminDashboard() {
                     ) : (
                       pendingAdmins.map((adm) => {
                         const targetId = adm._id || adm.id;
-                        const isUpdating = updatingId === targetId;
+                        const isApproving = approvingAdminId === targetId;
+                        const isRejecting = rejectingAdminId === targetId;
+                        const isProcessing = isApproving || isRejecting;
 
                         return (
                           <tr key={targetId} className="hover:bg-[#0e223b]/50 transition">
@@ -362,15 +372,20 @@ export default function PlatformAdminDashboard() {
                                     e.preventDefault();
                                     handleUpdateStatus(targetId, adm.name, 'active', adm.companyCode, adm.companyId);
                                   }}
-                                  disabled={isUpdating}
-                                  className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 rounded-lg text-xs font-mono font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                                  disabled={isProcessing}
+                                  className="min-w-[105px] px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 rounded-lg text-xs font-mono font-bold transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                  {isUpdating ? (
-                                    <RefreshCw size={14} className="animate-spin" />
+                                  {isApproving ? (
+                                    <>
+                                      <RefreshCw size={13} className="animate-spin text-emerald-400 shrink-0" />
+                                      <span>Approving...</span>
+                                    </>
                                   ) : (
-                                    <CheckCircle2 size={14} />
+                                    <>
+                                      <CheckCircle2 size={14} className="shrink-0" />
+                                      <span>Approve</span>
+                                    </>
                                   )}
-                                  Approve
                                 </button>
                                 <button
                                   type="button"
@@ -378,15 +393,20 @@ export default function PlatformAdminDashboard() {
                                     e.preventDefault();
                                     handleUpdateStatus(targetId, adm.name, 'rejected', adm.companyCode, adm.companyId);
                                   }}
-                                  disabled={isUpdating}
-                                  className="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/40 rounded-lg text-xs font-mono font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                                  disabled={isProcessing}
+                                  className="min-w-[100px] px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/40 rounded-lg text-xs font-mono font-bold transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                  {isUpdating ? (
-                                    <RefreshCw size={14} className="animate-spin" />
+                                  {isRejecting ? (
+                                    <>
+                                      <RefreshCw size={13} className="animate-spin text-red-400 shrink-0" />
+                                      <span>Rejecting...</span>
+                                    </>
                                   ) : (
-                                    <XCircle size={14} />
+                                    <>
+                                      <XCircle size={14} className="shrink-0" />
+                                      <span>Reject</span>
+                                    </>
                                   )}
-                                  Reject
                                 </button>
                               </div>
                             </td>
