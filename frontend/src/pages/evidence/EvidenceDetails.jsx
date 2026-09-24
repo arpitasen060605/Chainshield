@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import Layout from "../../components/layout/Layout";
 import HashDisplay from "../../components/common/HashDisplay";
 import { getEvidenceById, downloadEvidenceFile, transferCustody } from "../../services/evidenceService";
-import { getBlockchainProof, registerBlockchainProof, verifyOnChainProof } from "../../services/blockchainService";
+import { verifyOnChainProof } from "../../services/blockchainService";
 import {
   ArrowLeft,
   File,
@@ -12,14 +12,11 @@ import {
   Download,
   Loader2,
   AlertCircle,
-  FileText,
   Clock,
-  HardDrive,
   RefreshCw,
   X,
   CheckCircle2,
   ArrowRight,
-  ExternalLink,
 } from "lucide-react";
 
 export default function EvidenceDetails() {
@@ -281,74 +278,45 @@ export default function EvidenceDetails() {
             showDiagram={true}
           />
 
-          {/* Blockchain Verification Section */}
+          {/* Verification & Integrity Section */}
           <div className="bg-[#0b1827] border border-[#203246] rounded-2xl p-5 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-[#1b2d42] pb-3">
               <h3 className="font-bold text-white text-sm flex items-center gap-2">
-                <Shield className="text-purple-400" size={16} /> Blockchain Smart Contract Proof
+                <Shield className="text-emerald-400" size={16} /> Evidence Verification & Integrity Status
               </h3>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border uppercase ${
-                    evidence.blockchainRecord?.status === "confirmed" || evidence.blockchainRecord?.status === "REGISTERED"
-                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                      : evidence.blockchainRecord?.status === "pending"
-                      ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                      : evidence.blockchainRecord?.status === "failed"
-                      ? "bg-red-500/10 text-red-400 border-red-500/30"
-                      : "bg-slate-500/10 text-slate-400 border-slate-500/30"
-                  }`}
-                >
-                  Status: {evidence.blockchainRecord?.status || "unanchored"}
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-              <div className="bg-[#071322] border border-[#17283c] p-3 rounded-xl space-y-1">
-                <span className="text-slate-400 text-[10px] block">Network Ledger</span>
-                <span className="font-mono text-slate-200 font-semibold block">
-                  {evidence.blockchainRecord?.network || "Ethereum Sepolia Testnet"}
-                </span>
-              </div>
-              <div className="bg-[#071322] border border-[#17283c] p-3 rounded-xl space-y-1">
-                <span className="text-slate-400 text-[10px] block">Block Number</span>
-                <span className="font-mono text-cyan-400 font-bold block">
-                  {evidence.blockchainRecord?.blockNumber ? `#${evidence.blockchainRecord.blockNumber}` : "Pending Confirmation"}
-                </span>
-              </div>
-            </div>
-
-            <div className="bg-[#071322] border border-[#17283c] p-3.5 rounded-xl space-y-2 text-xs">
-              <div>
-                <span className="text-slate-400 text-[10px] block">Contract Address</span>
-                <code className="text-purple-300 font-mono text-[11px] break-all block mt-0.5">
-                  {evidence.blockchainRecord?.contractAddress || "0x5FbDB2315678afecb367f032d93F642f64180aa3"}
-                </code>
-              </div>
-
-              <div>
-                <span className="text-slate-400 text-[10px] block">Transaction Hash</span>
-                {evidence.blockchainRecord?.txHash || evidence.blockchainRecord?.transactionHash ? (
-                  <a
-                    href={
-                      "https://sepolia.etherscan.io/tx/" +
-                      (evidence.blockchainRecord?.txHash || evidence.blockchainRecord?.transactionHash)
+              <button
+                onClick={async () => {
+                  try {
+                    setBcVerifying(true);
+                    setBcVerifyResult(null);
+                    const targetId = evidence._id || evidence.evidenceId;
+                    const res = await verifyOnChainProof(targetId);
+                    if (res && res.success) {
+                      setBcVerifyResult(res.blockchainVerification || res);
+                    } else {
+                      setBcVerifyResult({
+                        blockchainVerified: false,
+                        message: res.message || "Failed to verify evidence record integrity.",
+                      });
                     }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-400 hover:underline font-mono text-[11px] break-all flex items-center gap-1 mt-0.5"
-                  >
-                    <span>{evidence.blockchainRecord?.txHash || evidence.blockchainRecord?.transactionHash}</span>
-                    <ExternalLink size={12} className="shrink-0" />
-                  </a>
-                ) : (
-                  <span className="text-slate-500 font-mono text-[11px] block mt-0.5">Not yet anchored on smart contract</span>
-                )}
-              </div>
+                  } catch (err) {
+                    setBcVerifyResult({
+                      blockchainVerified: false,
+                      message: err.response?.data?.message || "Failed to verify evidence record integrity.",
+                    });
+                  } finally {
+                    setBcVerifying(false);
+                  }
+                }}
+                disabled={bcVerifying}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 text-white rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-2"
+              >
+                {bcVerifying ? <Loader2 size={14} className="animate-spin" /> : <Shield size={14} />}
+                {bcVerifying ? "Verifying..." : "Verify Integrity"}
+              </button>
             </div>
 
-            {bcVerifyResult && (
+            {bcVerifyResult ? (
               <div
                 className={`p-3.5 rounded-xl border text-xs flex items-center justify-between ${
                   bcVerifyResult.blockchainVerified || bcVerifyResult.fileIntegrity
@@ -364,67 +332,17 @@ export default function EvidenceDetails() {
                   )}
                   <span>
                     {bcVerifyResult.message ||
-                      (bcVerifyResult.blockchainVerified
-                        ? "✓ Evidence integrity verified against on-chain smart contract record."
-                        : "✗ Hash mismatch or unanchored on-chain record.")}
+                      (bcVerifyResult.blockchainVerified || bcVerifyResult.fileIntegrity
+                        ? "✓ Evidence integrity verified successfully against authoritative record."
+                        : "✗ Hash mismatch or unverified record.")}
                   </span>
                 </div>
               </div>
+            ) : (
+              <p className="text-slate-400 text-xs">
+                Click "Verify Integrity" to run an automated cryptographic verification check against the stored SHA-256 hash record.
+              </p>
             )}
-
-            <div className="flex items-center gap-2 pt-2 border-t border-[#1b2d42]">
-              <button
-                onClick={async () => {
-                  try {
-                    setBcVerifying(true);
-                    setBcVerifyResult(null);
-                    const targetId = evidence._id || evidence.evidenceId;
-                    const res = await verifyOnChainProof(targetId);
-                    if (res && res.success) {
-                      setBcVerifyResult(res.blockchainVerification || res);
-                    } else {
-                      setBcVerifyResult({
-                        blockchainVerified: false,
-                        message: res.message || "Failed to verify on-chain record.",
-                      });
-                    }
-                  } catch (err) {
-                    setBcVerifyResult({
-                      blockchainVerified: false,
-                      message: err.response?.data?.message || "Failed to verify blockchain integrity.",
-                    });
-                  } finally {
-                    setBcVerifying(false);
-                  }
-                }}
-                disabled={bcVerifying}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 text-white rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-2"
-              >
-                {bcVerifying ? <Loader2 size={14} className="animate-spin" /> : <Shield size={14} />}
-                {bcVerifying ? "Verifying On-Chain..." : "Verify Integrity"}
-              </button>
-
-              {(!evidence.blockchainRecord?.txHash || evidence.blockchainRecord?.status === "failed") && (
-                <button
-                  onClick={async () => {
-                    try {
-                      setBcVerifying(true);
-                      const targetId = evidence._id || evidence.evidenceId;
-                      await registerBlockchainProof(targetId);
-                      await fetchEvidenceDetails();
-                    } catch (err) {
-                      alert(err.response?.data?.message || "Failed to anchor evidence on smart contract.");
-                    } finally {
-                      setBcVerifying(false);
-                    }
-                  }}
-                  disabled={bcVerifying}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:bg-purple-800 text-white rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-2"
-                >
-                  <RefreshCw size={14} /> Anchor On-Chain Now
-                </button>
-              )}
-            </div>
           </div>
 
           {/* Chain of Custody History Timeline */}
