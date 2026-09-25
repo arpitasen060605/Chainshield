@@ -5,7 +5,7 @@ let cachedConfigKey = null;
 
 const getTransporter = () => {
   const host = process.env.BREVO_SMTP_HOST || process.env.SMTP_HOST || 'smtp-relay.brevo.com';
-  const port = parseInt(process.env.BREVO_SMTP_PORT || process.env.SMTP_PORT || '587', 10);
+  const port = parseInt(process.env.BREVO_SMTP_PORT || process.env.SMTP_PORT || '2525', 10);
   const user = process.env.BREVO_SMTP_USER || process.env.SMTP_USER || process.env.SMTP_USERNAME || process.env.EMAIL_USER;
   const pass = process.env.BREVO_SMTP_KEY || process.env.BREVO_SMTP_PASS || process.env.SMTP_PASS || process.env.SMTP_PASSWORD || process.env.EMAIL_PASS;
 
@@ -46,7 +46,7 @@ const getTransporter = () => {
  */
 export const sendOtpEmail = async ({ toEmail, otp }) => {
   const host = process.env.BREVO_SMTP_HOST || process.env.SMTP_HOST || 'smtp-relay.brevo.com';
-  const port = parseInt(process.env.BREVO_SMTP_PORT || process.env.SMTP_PORT || '587', 10);
+  const port = parseInt(process.env.BREVO_SMTP_PORT || process.env.SMTP_PORT || '2525', 10);
   const user = process.env.BREVO_SMTP_USER || process.env.SMTP_USER || process.env.SMTP_USERNAME || process.env.EMAIL_USER;
   const pass = process.env.BREVO_SMTP_KEY || process.env.BREVO_SMTP_PASS || process.env.SMTP_PASS || process.env.SMTP_PASSWORD || process.env.EMAIL_PASS;
   const rawFrom = process.env.BREVO_FROM_EMAIL || process.env.SMTP_FROM || process.env.FROM_EMAIL || process.env.EMAIL_FROM || user;
